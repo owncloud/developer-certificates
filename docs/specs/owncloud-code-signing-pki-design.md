@@ -1026,3 +1026,35 @@ companion spec. "Deferred" = intentionally out of scope for now.
   a valid leaf for *any* appId, including already-claimed ones, and the server
   accepts it (Mode-1, until revocation). Intermediate revocation (all-or-nothing,
   per §7) is the only remedy. Inherent to any CA compromise; stated explicitly.
+
+  **Status: accepted (reviewed).** A verify-time *ledger-inclusion* control was
+  proposed — require the leaf's serial/fingerprint to be present in a published
+  active-set, else fail (`NOT_IN_LEDGER`) — to catch a rogue-but-valid-chaining
+  leaf. The proposal correctly notes that the **CRL is a denylist and structurally
+  cannot catch a forged leaf** (never issued → never revoked → absent from the
+  CRL). It is nonetheless **declined**, because a verify-time positive-inclusion
+  gate changes the trust model rather than hardening this one:
+  - It moves the trust anchor off the certificate chain. In a standard PKI, "was
+    this issued by us?" *is* "does it chain to our root and validate." Requiring an
+    additional central allowlist at verify time asserts the chain is no longer
+    sufficient — a different architecture, not a reinforcement of this one.
+  - It is internally inconsistent unless applied everywhere: the same logic would
+    force a central "did we really issue this?" check on the Mode-2 attestation
+    cert/tokens and on the app signatures themselves, dissolving the PKI into a
+    centralized signing/verification oracle.
+  - It **breaks offline verification** (a hard requirement for air-gapped
+    installs). An online-only, fail-open-when-offline check is not a guarantee: an
+    attacker holding the intermediate key can also suppress the active-set fetch and
+    reach the fail-open path — raising the bar only from "steal the key" to "steal
+    the key and block one fetch."
+  - Intermediate-key compromise is the **standard CA-compromise assumption**, whose
+    accepted remedy is intermediate revocation (§7). The primary control is
+    protecting the intermediate key (Vault Transit so the key never leaves;
+    HSM/tight-access/audit to raise the bar).
+
+  The legitimate kernel — chain-to-root does not *detect* misissuance — belongs to
+  the separately-deferred **transparency-log / external-monitoring** work
+  (Certificate-Transparency-style **detection** enabling fast revocation, off the
+  verify path, preserving offline verification), **not** to a verify-time gate.
+  Cross-reference, do not couple: that work would shrink S5's *window*, not change
+  the trust model.
