@@ -9,12 +9,12 @@ import (
 // (design "Companion specs" list). They are copied verbatim into docs/specs/
 // and must all be present.
 var specFiles = []string{
-	"2026-07-06-owncloud-code-signing-pki-design.md",
-	"2026-07-06-spec-enrollment-bot.md",
-	"2026-07-06-spec-attestation-and-crl-workflows.md",
-	"2026-07-06-spec-core-verifier.md",
-	"2026-07-06-spec-go-signing-tool.md",
-	"2026-07-06-spec-developer-documentation.md",
+	"owncloud-code-signing-pki-design.md",
+	"spec-enrollment-bot.md",
+	"spec-attestation-and-crl-workflows.md",
+	"spec-core-verifier.md",
+	"spec-go-signing-tool.md",
+	"spec-developer-documentation.md",
 }
 
 func TestSpecsPresent(t *testing.T) {

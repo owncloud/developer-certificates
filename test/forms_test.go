@@ -28,7 +28,7 @@ type formBody struct {
 // ledger FCFS check and the server CN==appId check must treat appIds
 // identically, so this exact string must appear (and not drift) across the
 // forms and the developer guide.
-const appIdRegex = `^[a-z][a-z0-9_-]{1,63}$`
+const appIdRegex = `^[a-z][a-z0-9_.-]{2,63}$`
 
 // challengePath is the fixed nonce-challenge file path (design §5.3).
 const challengePath = "/.well-known/owncloud-codesigning-challenge.txt"
@@ -115,11 +115,15 @@ func TestRevocationRequestForm(t *testing.T) {
 		t.Errorf("revocation-request.yml: expected label %q, got %v", "revocation-request", f.Labels)
 	}
 
-	if _, ok := bodyElement(f, "input", "cert"); !ok {
-		t.Errorf("revocation-request.yml: missing input field id=cert")
+	// Self-service revocation is a single self-contained CMS/PKCS#7 SignedData
+	// request (the signer cert is embedded, so no separate identifier field is
+	// needed) — design §7.1, enrollment-bot spec §5.1.
+	cms, ok := bodyElement(f, "textarea", "cms_request")
+	if !ok {
+		t.Fatalf("revocation-request.yml: missing textarea field id=cms_request")
 	}
-	if _, ok := bodyElement(f, "textarea", "signed_request"); !ok {
-		t.Errorf("revocation-request.yml: missing textarea field id=signed_request")
+	if !cms.Validations["required"] {
+		t.Errorf("revocation-request.yml: cms_request field must be required")
 	}
 }
 
@@ -160,12 +164,15 @@ func TestDeveloperGuide(t *testing.T) {
 	if !strings.Contains(guide, challengePath) {
 		t.Errorf("developer-guide.md: expected challenge path %q (design §5.3) to appear", challengePath)
 	}
-	// The generic placeholder must be resolved to the real repo slug.
+	// The generic placeholder must be resolved to the real repo slug. The
+	// documentation names the production codesigning repo owncloud/developer-certificates
+	// (technical items such as go.mod and the VDP URL stay on the staging slug
+	// until the repo is moved to the ownCloud org).
 	if strings.Contains(guide, "<codesigning-repo>") {
 		t.Errorf("developer-guide.md: unresolved <codesigning-repo> placeholder remains")
 	}
-	if !strings.Contains(guide, "DeepDiver1975/developer-certificates") {
-		t.Errorf("developer-guide.md: expected resolved repo slug DeepDiver1975/developer-certificates")
+	if !strings.Contains(guide, "owncloud/developer-certificates") {
+		t.Errorf("developer-guide.md: expected resolved repo slug owncloud/developer-certificates")
 	}
 }
 
