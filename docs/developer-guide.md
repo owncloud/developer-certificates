@@ -5,9 +5,9 @@ app, and keep it verifying over time. It is the external developer documentation
 for the ownCloud Code-Signing PKI (see [`specs/`](specs/) for the full design).
 
 > **Placeholders.** Examples use `example-app`, `example-org`, `example-user`.
-> The codesigning repo is **`DeepDiver1975/developer-certificates`**. The CRL URL
-> (`<crl-url>`) is finalized when GitHub Pages hosting is configured; it is a
-> core-side constant and not something developers interact with directly.
+> The codesigning repo is **`owncloud/developer-certificates`**. The CRL is
+> published at `https://owncloud.github.io/developer-certificates/crl/developers.crl`;
+> it is a core-side constant and not something developers interact with directly.
 >
 > **Status: dev / staging.** This repository is private during implementation.
 > The production codesigning repo will be public (its ledger is a public
@@ -45,7 +45,7 @@ Primary path — **EC P-384**:
 # 1. Generate your private key (KEEP THIS SECRET — never share, never commit)
 openssl ecparam -name secp384r1 -genkey -noout -out example-app.key
 
-# 2. Create the CSR. The CN must be your app id (lowercase; a-z 0-9 _ - ; 2-64;
+# 2. Create the CSR. The CN must be your app id (lowercase; a-z 0-9 _ . - ; 3-64;
 #    must start with a letter) and MUST match the id in your appinfo/info.xml.
 openssl req -new -key example-app.key -out example-app.csr \
   -subj "/CN=example-app"
@@ -67,21 +67,21 @@ in `cmd.exe` the same. On POSIX shells the quoting above is correct.
   (public key). We will never ask for your private key.
 - The CSR `CN` and your `appinfo/info.xml` `id` must be the **same** canonical
   appId, or issuance is rejected.
-- Allowed appId charset: `^[a-z][a-z0-9_-]{1,63}$` (lowercase ASCII letters,
-  digits, underscore, hyphen; letter-first; 2–64 chars).
+- Allowed appId charset: `^[a-z][a-z0-9_.-]{2,63}$` (lowercase ASCII letters,
+  digits, underscore, hyphen, dot; letter-first; 3–64 chars).
 
 ---
 
 ## 3. Request a certificate
 
 1. Open a **"Request a code-signing certificate"** issue in
-   `DeepDiver1975/developer-certificates` using the form. Paste your CSR; enter
+   `owncloud/developer-certificates` using the form. Paste your CSR; enter
    your app's repository (`owner/name`).
 2. A bot replies with a **one-time challenge value** and instructions.
 3. Commit a file containing exactly that value to your repo's **default branch**
    at:
 
-   ```
+   ```text
    /.well-known/owncloud-codesigning-challenge.txt
    ```
 
@@ -128,7 +128,7 @@ expires**, obtain an attestation:
 ```sh
 ocsign --path ./example-app --key example-app.key \
        --cert example-app-leaf.crt --chain intermediate.crt \
-       --attest --attest-repo DeepDiver1975/developer-certificates
+       --attest --attest-repo owncloud/developer-certificates
 ```
 
 This asks our attestation service to timestamp your signed manifest and embeds
@@ -158,24 +158,20 @@ to your ledger entry). You may hold multiple valid certs at once (e.g. a CI key
 and a release key).
 
 **Revoke — self-service (you still hold the key):** open a **"Request
-revocation"** issue with your cert's serial/fingerprint and a revocation request
-**signed with your private key**:
+revocation"** issue and paste a **CMS revocation request** — a standard signed
+blob proving you hold the certificate's private key. One command:
 
 ```sh
-# Produce the signed revocation request.
-openssl dgst -sha384 -sign example-app.key \
-  -out revoke.sig revocation-statement.txt
-base64 revoke.sig > revoke.sig.b64
+# Sign the word "revoke" with your cert's key; the certificate is embedded
+# automatically. Paste revocation-request.pem into the issue.
+printf 'revoke' | openssl cms -sign \
+  -signer example-app-leaf.crt -inkey example-app.key \
+  -outform PEM -nodetach -out revocation-request.pem
 ```
 
-The bot verifies the signature against your cert's public key and revokes
-automatically — no human step.
-
-> **Statement format not yet finalized.** The exact bytes of
-> `revocation-statement.txt` (what precisely you sign) are being pinned so the
-> documented OpenSSL command and the bot's verifier agree byte-for-byte (specs —
-> enrollment bot, Open items). This section will carry the exact command once the
-> revocation bot lands.
+The bot verifies the CMS signature, reads the embedded certificate, matches it to
+your ledger entry, and revokes automatically — no human step. (This mirrors how
+ACME/Let's Encrypt lets you revoke a certificate using its own private key.)
 
 **Revoke — you lost your key, or you're reporting someone else's bad app:** you
 cannot sign, so report it through our **GitHub Security Advisory (VDP)**; the

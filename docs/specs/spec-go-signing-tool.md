@@ -1,6 +1,6 @@
 # Spec — Go Signing Tool (`ocsign`)
 
-**Companion to:** `2026-07-06-owncloud-code-signing-pki-design.md`
+**Companion to:** `owncloud-code-signing-pki-design.md`
 **Status:** Implementation spec, intended to be buildable ("vibe-codeable") from
 this document alone.
 **Audience:** whoever (human or agent) implements the standalone signing CLI, and
@@ -39,7 +39,7 @@ correctness bug that manifests as "signature valid but hashes differ."
 
 ## 2. CLI contract
 
-```
+```text
 ocsign [flags]
 
 Required:
@@ -175,25 +175,41 @@ Illustration (compact, sorted):
 
 ### 3.6 Core mode special cases
 
-Core mode (`--core`) signs the server root and carries the historical special
-cases, because core ships files that are legitimately modified at install and
-would otherwise always mismatch. Core mode excludes:
+Core mode (`--core`) signs the server root and carries a few special cases,
+because core ships files that are legitimately modified at runtime and would
+otherwise always mismatch. Core mode excludes / special-cases:
 
-- `core/signature.json`.
-- The **same OS/file-manager cruft** as app mode (§3.2 items 2–3).
-- `core/js/mimetypelist.js` (regeneratable via
+- **Exclude** `core/signature.json`.
+- **Exclude** the same OS/file-manager cruft as app mode (§3.2 items 2–3).
+- **Exclude** `core/js/mimetypelist.js` (regeneratable via
   `occ maintenance:mimetype:update-js`; excluded by the exact relative path).
-- `.htaccess` and `.user.ini` at the server root receive **normalized handling**
-  (hash a canonical baseline, not the install-mutated file), matching the legacy
-  verifier's behavior.
+- **`.htaccess` (server root) — marker-split (RESOLVED, still required for OC11
+  Docker).** Hash **only the content above** the first occurrence of the marker
+  line `#### DO NOT CHANGE ANYTHING ABOVE THIS LINE ####`; if the marker is
+  absent, hash the whole file. This mirrors the legacy `Checker::generateHashes`
+  and is still necessary: the OC11 Docker build (`server/v24.04/Dockerfile.multiarch`)
+  does `chmod g+w .../.htaccess`, i.e. ownCloud rewrites dynamic content
+  (rewrite/404/403 rules) into `.htaccess` below the marker at runtime.
+- **`.user.ini` (server root) — hash as-is (RESOLVED, confirmed).** The base image
+  (`base/v24.04/overlay/etc/owncloud.d/45-php.sh`) renders PHP tunables from env
+  into `/etc/php/8.3/mods-available/owncloud.ini`, **not** into the app tree's
+  `.user.ini`; and the image runs Apache + mod_php (which does not consume
+  `.user.ini`). The shipped `.user.ini` is therefore never mutated in-container and
+  is inert — hash it like any normal file. The legacy temp-copy dance is dropped
+  (it was a no-op that normalized nothing).
 
-> **DECISION TO CONFIRM (core mode only):** the precise `.htaccess`/`.user.ini`
-> normalization rules must be transcribed **exactly** from the legacy
-> `Checker::generateHashes` (reset to default values / take content above the
-> `#### DO NOT CHANGE ANYTHING ABOVE THIS LINE ####` marker) and reproduced
-> identically in the new verifier. This spec assumes verbatim transcription for
-> core; third-party **app mode does not use them** (§3.2, resolved). Confirm the
-> transcription when implementing core signing.
+> **DECISION CONFIRMED (both, via the `base` repo):** `.htaccess` marker-split is
+> transcribed verbatim from legacy and reproduced identically in the verifier —
+> **required**, because `base/.../50-apache.sh` runs `occ maintenance:update:htaccess`
+> at every container start (writes dynamic content below the marker). `.user.ini`
+> is hashed as-is — confirmed the base entrypoint does **not** render into it.
+> App mode uses none of these (§3.2).
+>
+> Aside (not a signing concern): the in-tree `.user.ini` is cosmetically stale in
+> Docker-only OC11 (ships `upload_max_filesize=513M` while the effective limit is
+> the env-driven `owncloud.ini`, default 20G). Worth flagging to the core team,
+> but it does not affect signing (the file is never touched, so it always matches
+> its signed hash).
 
 ---
 
@@ -295,7 +311,8 @@ Appendix B).
 Provide at least:
 
 1. **`tree-basic/`** — a small app tree:
-   ```
+
+   ```text
    tree-basic/
      appinfo/info.xml         (id = example-app)
      lib/Controller/Page.php
@@ -303,6 +320,7 @@ Provide at least:
      templates/index.php
      .hidden-config
    ```
+
    with:
    - `manifest.canonical.json` — the exact canonical bytes `M` (§3.5), committed
      as a byte-exact file (no trailing newline).
@@ -328,6 +346,7 @@ Provide at least:
    verifier must NOT report `EXTRA_FILE` for these when present on disk.
 
 **Conformance test (both signer and verifier):**
+
 - Recompute `M` from the tree → must equal `manifest.canonical.json` byte-for-byte.
 - Verify `signature.expected.json`'s signature against the test leaf over the
   recomputed `M` → must pass.
@@ -355,9 +374,10 @@ and produce signed revocation requests with it. Therefore:
 
 - **App-mode exclusions (§3.2): RESOLVED** — signature file + OS/file-manager
   cruft list.
-- **Core-mode `.htaccess`/`.user.ini` rules (§3.6):** confirm the verbatim
-  transcription from legacy when implementing core signing (one remaining
-  "DECISION TO CONFIRM").
+- **Core-mode `.htaccess`/`.user.ini` (§3.6): RESOLVED** — `.htaccess`
+  marker-split verbatim (still required; Docker rewrites it at runtime);
+  `.user.ini` hashed as-is. One flag: confirm the `owncloud/base` entrypoint does
+  not render into `.user.ini` (else exclude it).
 - **`--attest` workflow dispatch/poll mechanics** depend on the attestation
   workflow spec (repo, inputs, how the result token is returned to the caller —
   workflow artifact vs. a committed transparency-log entry the tool reads back).

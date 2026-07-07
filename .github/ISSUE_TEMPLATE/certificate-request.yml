@@ -8,7 +8,7 @@ body:
       value: |
         Your private key must never be shared. Paste only your CSR (public key).
         Your CSR `CN` must equal your app's `appinfo/info.xml` `id`
-        (lowercase; `^[a-z][a-z0-9_-]{1,63}$`).
+        (lowercase; `^[a-z][a-z0-9_.-]{2,63}$`).
   - type: textarea
     id: csr
     attributes:

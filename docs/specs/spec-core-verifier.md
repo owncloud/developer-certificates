@@ -1,10 +1,10 @@
 # Spec — Core Server Verifier
 
-**Companion to:** `2026-07-06-owncloud-code-signing-pki-design.md`
+**Companion to:** `owncloud-code-signing-pki-design.md`
 **Status:** Implementation spec, buildable from this document alone.
 **Audience:** whoever reimplements `OC\IntegrityCheck\Checker` (PHP) for the new
 PKI. MUST share the canonicalization rules and golden vectors with the Go signing
-tool spec (`2026-07-06-spec-go-signing-tool.md` §3, §8).
+tool spec (`spec-go-signing-tool.md` §3, §8).
 
 > **Examples** use placeholders (`example-app`, `example-org`).
 
@@ -37,7 +37,10 @@ Under `resources/codesigning/` (design §12):
 **Constants baked into the build:**
 
 - `CRL_URL` — the core-side constant CRL fetch URL (design §9, §13). Not read from
-  the cert's CRL DP.
+  the cert's CRL DP. Value:
+  `https://owncloud.github.io/developer-certificates/crl/developers.crl` (the leaf
+  CRL). The intermediate/root CRLs (`.../crl/intermediate.crl`, `.../crl/root.crl`)
+  are likewise constants if/when the verifier checks chain-cert revocation.
 - `LEGACY_SUNSET = 2026-12-31T23:59:59Z` — the hardcoded G1 transition cutoff
   (design §12).
 - `ALG_ALLOWLIST` — permitted `alg` values (see §3).
@@ -154,7 +157,7 @@ diff) is cached as today.
   warning), do not guess.
 - **Comparison:** ASCII-only case-fold the `info.xml` id (`A`–`Z`→`a`–`z`, the 26
   ASCII bytes only — never locale/Unicode lowercasing), validate against
-  `^[a-z][a-z0-9_-]{1,63}$` (reject if it still fails), then **exact-byte compare**
+  `^[a-z][a-z0-9_.-]{2,63}$` (reject if it still fails), then **exact-byte compare**
   to the leaf `CN`. The leaf `CN` is validated strictly against the same regex with
   **no** normalization (it is canonical by issuance).
 - Core mode: the reserved core identity is matched instead of an appId (design

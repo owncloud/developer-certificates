@@ -1,6 +1,6 @@
 # Spec — Enrollment & Revocation Bot
 
-**Companion to:** `2026-07-06-owncloud-code-signing-pki-design.md`
+**Companion to:** `owncloud-code-signing-pki-design.md`
 **Status:** Implementation spec, buildable ("vibe-codeable") from this document
 alone.
 **Audience:** whoever implements the GitHub App + Actions automation that runs the
@@ -73,7 +73,7 @@ Run under the single-concurrency ledger lock (§2). Steps:
    or RSA ≥ 3072 / RSA-4096 fallback; reject weak/unknown curves). Verify the CSR
    self-signature (proof of possession). Failure → comment + `invalid`, stop.
 3. **Derive & canonicalize appId.** Read the CSR `CN`; ASCII-lowercase + validate
-   against `^[a-z][a-z0-9_-]{1,63}$` (design §4.1). Failure → comment + stop.
+   against `^[a-z][a-z0-9_.-]{2,63}$` (design §4.1). Failure → comment + stop.
 4. **Read repo info.xml.** Fetch `appinfo/info.xml` from the **default branch** of
    the target repo (record the commit SHA). Extract the app `id`; ASCII-lowercase
    and validate. Absent file or non-conforming id → comment and stop.
@@ -116,24 +116,39 @@ relies on later are bot-authored.
 
 ## 5. Revocation (design §7.1)
 
-### 5.1 Self-service, signed (fully automated)
+### 5.1 Self-service, signed (fully automated) — CMS SignedData
 
-Revocation-request issue form fields:
+The signed revocation request is a **CMS / PKCS#7 SignedData** artifact (RFC 5652),
+produced and verified with the native `openssl cms` command on both sides. This
+follows the ACME cert-key-authenticated revocation *principle* (RFC 8555 §7.6:
+holding the certificate's private key authorizes its revocation) without running
+an ACME endpoint. Chosen over a bespoke text statement because it is standard,
+one clean command each side, self-contained (the signer cert is **embedded** in
+the CMS structure), and free of byte-parity hazards (the developer does not
+hand-assemble any canonical bytes).
 
-- **Cert identifier** — serial and/or SHA-256 fingerprint of the cert to revoke.
-- **Signed revocation request** — a small statement, signed with the cert's
-  **private key**, binding the cert identifier + revoke intent. (The exact
-  statement format and the OpenSSL command to produce it are in the developer-doc
-  spec.)
+Revocation-request issue form field:
+
+- **CMS revocation request** — a PEM `-----BEGIN CMS-----` (or PKCS#7) blob: a
+  small statement (e.g. the literal text `revoke`) signed with the cert's
+  **private key**, with the **leaf certificate embedded** as the signer cert.
+  The exact `openssl cms -sign` command is in the developer-doc spec.
+  (No separate serial/fingerprint field is needed — the bot reads the signer cert
+  from the CMS structure. A `title`/identifier is cosmetic only.)
 
 Bot pipeline (under the ledger lock):
 
-1. Look up the cert in the ledger by serial/fingerprint. Not found → comment,
-   stop.
-2. Load the cert's **public key** from the ledger/embedded cert. **Verify the
-   signed revocation request** against that public key. Invalid → comment
-   `invalid`, stop. (Proof-of-possession = authorization; no nonce needed. Replay
-   is harmless/idempotent.)
+1. **Verify the CMS** with `openssl cms -verify` (or a CMS library):
+   - the SignedData signature is valid, and
+   - it verifies against the **signer certificate embedded in the CMS**.
+   Use `-no_signer_cert_verify` (we are not validating the embedded cert's chain
+   here — we match it to the ledger in step 2, and it was our own issued cert).
+   Invalid CMS → comment `invalid`, stop.
+2. **Match to the ledger:** extract the embedded signer cert; compute its SHA-256
+   fingerprint (and serial) and find the matching **active** `certificates[]` entry
+   in the ledger. Not found / already revoked → comment, stop. (Proof-of-possession
+   via the CMS signature = authorization; no nonce needed. Replay is
+   harmless/idempotent.)
 3. Flip the ledger entry `status` → `revoked`; record `revokedFrom`
    (default: `notBefore` for a hard revoke, or a requester-supplied date ≥
    `notBefore`) and `reason = "self-service"`. Commit.
@@ -207,18 +222,20 @@ Developers use the OpenSSL CLI to create CSRs and signed revocation requests, so
 the bot MUST interoperate with standard OpenSSL output:
 
 - Parse standard OpenSSL CSRs and PEM keys/certs.
-- The **signed revocation request** the bot verifies MUST be exactly what the
-  documented OpenSSL command produces (developer-doc spec §6). The bytes signed
-  (the "revocation statement") and the signature encoding must agree
-  byte-for-byte between the documented command and the bot's verifier — the same
-  canonicalization discipline as the manifest. Cross-test against the `openssl`
-  CLI in CI.
+- The **signed revocation request** is a standard CMS/PKCS#7 SignedData artifact
+  (§5.1). The bot verifies it with `openssl cms -verify` (or an equivalent CMS
+  library). Because CMS is self-describing and the signer cert is embedded, there
+  is **no bespoke byte-parity concern** here (unlike the manifest) — the developer
+  does not hand-assemble canonical bytes. Cross-test the `openssl cms` sign/verify
+  round-trip in CI regardless.
 
 ## 11. Open items
 
 - **Poll cadence: 10 minutes** (decided). The issuer/revocation polling workflow
   runs on a `*/10 * * * *` schedule; nonce expiry (72h) is tracked from the bot
   comment's creation timestamp.
-- **Exact signed-revocation-request statement format** (what bytes are signed):
-  define alongside the developer-doc OpenSSL command so the bot's verifier and the
-  documented command agree byte-for-byte (see §10).
+- **Signed-revocation-request format: RESOLVED** — CMS/PKCS#7 SignedData with the
+  leaf cert embedded (§5.1), verified via `openssl cms -verify`. The signed inner
+  content can be a trivial fixed string (e.g. `revoke`); it carries no security
+  weight since authorization comes from the CMS signature + the embedded cert
+  matching the ledger. Add a golden vector (sample cert/key → CMS → bot accepts).

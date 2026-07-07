@@ -16,26 +16,32 @@ this document are placeholders (`example-app`, `example-org`, `example-user`,
 etc.). They are illustrative only. Real product/entity names (ownCloud, Kiteworks)
 and genuine technical identifiers (`core`, `signature.json`) are used as such.
 
-**⚠️ TO BE DECIDED (operational identifiers, not design):**
+**Operational identifiers (decided):**
 
-- **Codesigning repo name** — the single public GitHub repo hosting CSR intake
-  (issues), the ledger (files), the CRL, and the workflows. Referred to throughout
-  as `<codesigning-repo>`. **Not yet decided.**
-- **CRL URL** — the core-side constant URL the verifier fetches the CRL from
-  (initially a GitHub Pages `<owner>.github.io` address). Referred to as
-  `<crl-url>`. **Not yet decided** (follows from the repo name / Pages config).
+- **Codesigning repo:** `owncloud/developer-certificates` — the single repo
+  hosting CSR/revocation issue intake, the public issuance ledger, the CRL, and
+  the issuance/attestation/revocation workflows. (Created private in the ownCloud
+  org during implementation; made public before go-live, since the ledger is a
+  public transparency log.)
+- **CRL URLs (GitHub Pages, Option B):**
+  - leaf/developer CRL: `https://owncloud.github.io/developer-certificates/crl/developers.crl`
+  - intermediate CRL: `https://owncloud.github.io/developer-certificates/crl/intermediate.crl`
+  - root CRL: `https://owncloud.github.io/developer-certificates/crl/root.crl`
+
+  These are the constants the verifier is built with (§9, §13). Migration to a
+  custom domain later is a code-constant change + independent hosting (§13).
 
 **Companion specs (separate files, option #2 structure):**
 
-- `2026-07-06-spec-enrollment-bot.md` — GitHub App + Actions enrollment bot,
+- `spec-enrollment-bot.md` — GitHub App + Actions enrollment bot,
   privileged partner workflow, internal partner processing.
-- `2026-07-06-spec-attestation-and-crl-workflows.md` — dispatchable attestation
+- `spec-attestation-and-crl-workflows.md` — dispatchable attestation
   workflow, reference developer signing workflow, CRL generation/publishing.
-- `2026-07-06-spec-core-verifier.md` — the new `Checker` verification, transition
+- `spec-core-verifier.md` — the new `Checker` verification, transition
   logic, sunset, CRL fetch.
-- `2026-07-06-spec-go-signing-tool.md` — standalone Go signing CLI, incl. the
+- `spec-go-signing-tool.md` — standalone Go signing CLI, incl. the
   canonicalization spec and golden test vectors.
-- `2026-07-06-spec-developer-documentation.md` — external developer guide and the
+- `spec-developer-documentation.md` — external developer guide and the
   GitHub issue form YAML.
 
 ---
@@ -218,8 +224,8 @@ appId and the comparison rule are security-critical: the ledger's FCFS uniquenes
 check and the server's `CN==appId` check **must** treat two strings as "the same
 appId" identically, or the anti-impersonation guarantee breaks.
 
-**Legal appId:** `^[a-z][a-z0-9_-]{1,63}$` — lowercase ASCII letters, digits,
-underscore, hyphen; must start with a letter; 2–64 characters. This forbids
+**Legal appId:** `^[a-z][a-z0-9_.-]{2,63}$` — lowercase ASCII letters, digits,
+underscore, hyphen, dot; must start with a letter; 3–64 characters. This forbids
 uppercase, dots, whitespace, and all non-ASCII characters. Homoglyph attacks
 (e.g. Cyrillic `а`) and lookalike dashes (en-/em-dash, U+2212) are impossible
 because those characters are simply illegal and rejected.
@@ -277,7 +283,7 @@ the CSR `CN` (claim), the repo `info.xml` `id` (enrollment), and the shipped
    snapshot; reject if the file is absent — the conventional path is assumed and
    can be revisited later if unusual layouts need support).
 2. ASCII-lowercases and validates both the CSR `CN` and the repo `info.xml` `id`
-   against `^[a-z][a-z0-9_-]{1,63}$` (§4.1). They **must match** after
+   against `^[a-z][a-z0-9_.-]{2,63}$` (§4.1). They **must match** after
    canonicalization; on disagreement the request is **rejected** (the developer
    aligns them and resubmits).
 3. Mints the leaf with **`CN` = that canonical (validated, lowercased) appId**, so
@@ -403,14 +409,18 @@ All paths converge on the same execution: **edit the ledger** (`status` →
 workflow republishes. Four cases:
 
 1. **Developer self-service (fully automated, no human).** The developer submits
-   a **"Request revocation" GitHub issue form** containing a revocation request
-   **signed with their private key**. The bot verifies that signature **against
-   the public key in the cert being revoked** (held in the ledger) — a valid
-   signature is proof-of-possession and is sufficient authorization, so the bot
-   revokes automatically. No nonce/challenge is needed: revocation is fail-safe
-   and **replay is harmless** (re-revoking is idempotent). The signed statement
-   binds the **cert identifier** (serial + fingerprint) and revoke intent; the
-   OpenSSL command to produce it is documented for developers.
+   a **"Request revocation" GitHub issue form** containing a **CMS/PKCS#7
+   SignedData** revocation request (RFC 5652) produced with `openssl cms -sign`,
+   signed with the cert's **private key** and with the **certificate embedded**.
+   The bot verifies the CMS signature (`openssl cms -verify`), reads the embedded
+   signer cert, matches it to the ledger, and revokes automatically. A valid CMS
+   signature is proof-of-possession and sufficient authorization — no
+   nonce/challenge is needed: revocation is fail-safe and **replay is harmless**
+   (re-revoking is idempotent). This follows the ACME cert-key-authenticated
+   revocation principle (RFC 8555 §7.6) without running an ACME endpoint. Because
+   the cert is embedded, no separate serial/fingerprint field is required, and
+   there is no bespoke byte-parity hazard. The OpenSSL command is documented for
+   developers.
 2. **Privileged internal workflow (authoritative).** A `workflow_dispatch`,
    org-gated workflow revokes **any** cert. Inputs: cert identifier + a **reason
    string**; the **triggering GitHub account** is recorded. This is the path all
@@ -525,7 +535,7 @@ Per app (given `appinfo/signature.json`; core uses `core/signature.json`):
    disagree, `info.xml` **wins**; on any mismatch that cannot be resolved to a
    single appId, **stop and do not install** (fail with a warning) rather than
    guess. The comparison follows §4.1: ASCII-only case-fold the `info.xml` id,
-   validate against `^[a-z][a-z0-9_-]{1,63}$`, then exact-byte compare to the cert
+   validate against `^[a-z][a-z0-9_.-]{2,63}$`, then exact-byte compare to the cert
    `CN` (which is validated strictly, no normalization).
 6. **Integrity diff.** Re-hash on-disk files, compare to the signed manifest
    (`FILE_MISSING` / `EXTRA_FILE` / `INVALID_HASH`).
@@ -658,9 +668,11 @@ may physically delete the inert G1 files (cosmetic).
 
 ## 13. CRL hosting
 
-- **Start with GitHub Pages, default `<owner>.github.io` URL (Option B).** The
-  CRL is generated by the ledger workflow, committed into the repo, and served
-  over the Pages/Fastly CDN. Maximally co-located with the ledger.
+- **Start with GitHub Pages, default `github.io` URL (Option B):**
+  `https://owncloud.github.io/developer-certificates/crl/` (leaf =
+  `developers.crl`, plus `intermediate.crl`, `root.crl`). The CRL is generated by
+  the ledger workflow, committed into the repo, and served over the Pages/Fastly
+  CDN. Maximally co-located with the ledger.
 - The verifier uses a **core-side constant URL** and does **not** follow
   redirects (§9).
 - **Future migration to a custom domain (Option C):** done as a **code change to
@@ -834,7 +846,7 @@ openssl x509 -req -in intermediate-g2.csr -CA root-g2.crt -CAkey root-g2.key \
     "extendedKeyUsage=codeSigning" \
     "subjectKeyIdentifier=hash" \
     "authorityKeyIdentifier=keyid:always" \
-    "crlDistributionPoints=URI:<root-crl-url>") \
+    "crlDistributionPoints=URI:https://owncloud.github.io/developer-certificates/crl/root.crl") \
   -out intermediate-g2.crt
 ```
 
@@ -964,16 +976,21 @@ companion spec. "Deferred" = intentionally out of scope for now.
 - **Canonicalization parity:** the single highest-risk implementation detail —
   the Go signer and the PHP verifier must agree byte-for-byte. Golden test
   vectors are the mitigation.
-- **`.htaccess` / `.user.ini` special-casing:** **resolved for app mode** — app
-  mode uses only the signature file + OS-cruft exclusions (no special hashing).
-  **Core mode** still requires verbatim transcription of the legacy
-  `.htaccess`/`.user.ini` normalization (one remaining "DECISION TO CONFIRM" in
-  the Go signing tool spec §3.6) when core signing is implemented.
+- **`.htaccess` / `.user.ini` special-casing:** **resolved and confirmed** against
+  the `base` repo. App mode uses only the signature file + OS-cruft exclusions.
+  Core mode: `.htaccess` marker-split verbatim (required — `base/.../50-apache.sh`
+  runs `occ maintenance:update:htaccess` at every container start); `.user.ini`
+  hashed as-is (the base entrypoint renders PHP config into a separate
+  `owncloud.ini` from env, never into `.user.ini`; Apache+mod_php ignores
+  `.user.ini` anyway). See Go signing tool spec §3.6. (Aside: the in-tree
+  `.user.ini` is cosmetically stale in Docker — flag to the core team, no signing
+  impact.)
 - **Attestation token `bind(H, T)` byte layout (⚠️ item #2):** the exact bytes
   signed to bind manifest hash and timestamp are **not yet fixed**; blocks Mode-2
   implementation. See the attestation/CRL workflows spec §5.
-- **Operational identifiers:** the **codesigning repo name** and **CRL URL** are
-  **to be decided** (see the "TO BE DECIDED" block at the top).
+- **Operational identifiers: decided** — repo `owncloud/developer-certificates`;
+  CRL URLs under `https://owncloud.github.io/developer-certificates/crl/`
+  (`developers.crl`, `intermediate.crl`, `root.crl`). See the header block.
 - **Decided operational values:** attestation cert validity = 3 years; issuer/
   revocation poll cadence = 10 min; CRL regeneration = daily, `nextUpdate` = +7d.
 - **Mode-1 revocation punishes good history (G1):** a developer who never

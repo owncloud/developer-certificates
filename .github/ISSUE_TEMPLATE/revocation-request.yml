@@ -1,27 +1,22 @@
 name: Request certificate revocation
-description: Revoke one of your certificates (requires a request signed with your
-  private key).
-title: "[revoke] <cert-serial-or-fingerprint>"
+description: Revoke one of your certificates (requires a CMS request signed with
+  your private key).
+title: "[revoke] <your-app-id>"
 labels: ["revocation-request"]
 body:
   - type: markdown
     attributes:
       value: |
         If you no longer have the private key, do NOT use this form — report via
-        our Security Advisory (VDP) instead.
-  - type: input
-    id: cert
-    attributes:
-      label: Certificate identifier
-      description: Serial number and/or SHA-256 fingerprint of the cert to revoke.
-    validations:
-      required: true
+        our Security Advisory (VDP) instead. Paste the CMS revocation request
+        produced by the `openssl cms -sign` command in the docs; your certificate
+        is embedded in it, so no separate identifier is needed.
   - type: textarea
-    id: signed_request
+    id: cms_request
     attributes:
-      label: Signed revocation request (base64)
-      description: The revocation statement signed with the certificate's private
-        key. See the docs for the exact OpenSSL command.
+      label: CMS revocation request (PEM)
+      description: The `-----BEGIN CMS-----` block from `openssl cms -sign`
+        (signed with your cert's private key; the cert is embedded).
       render: text
     validations:
       required: true

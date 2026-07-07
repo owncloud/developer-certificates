@@ -1,6 +1,6 @@
 # Spec — Attestation & CRL Workflows
 
-**Companion to:** `2026-07-06-owncloud-code-signing-pki-design.md`
+**Companion to:** `owncloud-code-signing-pki-design.md`
 **Status:** Implementation spec, buildable from this document alone.
 **Audience:** whoever implements the attestation workflow, the reference developer
 signing workflow, and CRL generation/publishing.
@@ -55,6 +55,7 @@ Not authorization, but the token is only issued for a genuinely-signed manifest:
 > (RFC-3161-flavored), or a fixed documented concatenation. Whichever is chosen
 > must be documented here as the single source of truth and covered by a golden
 > vector (§4). Until decided, Mode-2 is not implementable.
+
 - Return to the caller: `token` (base64) + the **attestation certificate** (PEM,
   EKU `timeStamping`). Delivery mechanism: workflow artifact and/or a committed
   transparency-log entry the caller reads back (see §1.4, and Go tool spec §6).
@@ -112,21 +113,26 @@ cadence, so a missed run does not expire the CRL).
 
 Under the single-concurrency ledger lock (enrollment-bot spec §2):
 
-- **Leaf CRL** (signed by the **intermediate** via Vault Transit): include every
-  ledger `certificates[]` entry with `status = revoked`, each as a CRL entry with
-  its serial and **`revokedFrom`** encoded as the CRL entry's revocation/invalidity
-  date (this is what enables revoke-from-time — design §9). Set `thisUpdate` = now,
-  `nextUpdate` = now + a fixed interval.
-- **Intermediate CRL** (signed by the **root**): generated only during a root-side
-  ceremony (rare); normally static. Include any revoked intermediates.
+- **Leaf CRL** → published as **`crl/developers.crl`** (signed by the
+  **intermediate** via Vault Transit): include every ledger `certificates[]` entry
+  with `status = revoked`, each as a CRL entry with its serial and **`revokedFrom`**
+  encoded as the CRL entry's revocation/invalidity date (this is what enables
+  revoke-from-time — design §9). Set `thisUpdate` = now, `nextUpdate` = now + 7
+  days.
+- **Intermediate CRL** → **`crl/intermediate.crl`** (signed by the **root**):
+  generated only during a root-side ceremony (rare); normally static. Include any
+  revoked intermediates.
+- **Root CRL** → **`crl/root.crl`** (self-issued at the root ceremony; normally
+  empty/static).
 - **Legacy (G1) CRL:** frozen — bundled once, **never regenerated/refreshed**
   (accepted risk — design §12). Not produced by this workflow.
 
 ### 3.3 Publishing (design §13)
 
-- Commit the generated CRL(s) into the codesigning repo and publish via **GitHub
-  Pages** (default `<owner>.github.io` URL — Option B). Served over the Pages
-  CDN.
+- Commit the generated CRL(s) into the codesigning repo
+  (`owncloud/developer-certificates`) and publish via **GitHub Pages** at
+  `https://owncloud.github.io/developer-certificates/crl/` (Option B), served over
+  the Pages CDN.
 - The core verifier fetches from a **constant URL** and does **not** follow
   redirects (verifier spec §5). Future migration to a custom domain is a code
   change + independent hosting, **not** a Pages custom domain on this repo (which
@@ -159,5 +165,5 @@ when a fresh fetch fails (verifier spec §5).
 - **Token result delivery** to the `ocsign --attest` caller: decide between a
   workflow artifact the tool downloads vs. a transparency-log commit the tool
   reads back; document in the Go tool spec §6 accordingly.
-- **CRL `nextUpdate` interval** and the CRL-refresh schedule cadence: choose
-  operationally.
+- **CRL cadence: DECIDED** — regeneration daily; `nextUpdate` = +7 days;
+  issuer/revocation poll every 10 min.
