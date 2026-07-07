@@ -5,9 +5,9 @@ app, and keep it verifying over time. It is the external developer documentation
 for the ownCloud Code-Signing PKI (see [`specs/`](specs/) for the full design).
 
 > **Placeholders.** Examples use `example-app`, `example-org`, `example-user`.
-> The codesigning repo is **`owncloud/developer-certificates`**. The CRL URL
-> (`<crl-url>`) is finalized when GitHub Pages hosting is configured; it is a
-> core-side constant and not something developers interact with directly.
+> The codesigning repo is **`owncloud/developer-certificates`**. The CRL is
+> published at `https://owncloud.github.io/developer-certificates/crl/developers.crl`;
+> it is a core-side constant and not something developers interact with directly.
 >
 > **Status: dev / staging.** This repository is private during implementation.
 > The production codesigning repo will be public (its ledger is a public
@@ -81,7 +81,7 @@ in `cmd.exe` the same. On POSIX shells the quoting above is correct.
 3. Commit a file containing exactly that value to your repo's **default branch**
    at:
 
-   ```
+   ```text
    /.well-known/owncloud-codesigning-challenge.txt
    ```
 

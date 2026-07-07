@@ -75,7 +75,7 @@ in `cmd.exe` the same. On POSIX shells the quoting above is correct.
 3. Commit a file containing exactly that value to your repo's **default branch**
    at:
 
-   ```
+   ```text
    /.well-known/owncloud-codesigning-challenge.txt
    ```
 
@@ -278,4 +278,3 @@ body:
 - **GitLab (future):** identity is always a GitHub account today. Support for a
   GitLab-hosted app *repository* (nonce checked on GitLab) is planned but not yet
   available.
-```

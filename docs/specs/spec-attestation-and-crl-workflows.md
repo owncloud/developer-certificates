@@ -55,6 +55,7 @@ Not authorization, but the token is only issued for a genuinely-signed manifest:
 > (RFC-3161-flavored), or a fixed documented concatenation. Whichever is chosen
 > must be documented here as the single source of truth and covered by a golden
 > vector (§4). Until decided, Mode-2 is not implementable.
+
 - Return to the caller: `token` (base64) + the **attestation certificate** (PEM,
   EKU `timeStamping`). Delivery mechanism: workflow artifact and/or a committed
   transparency-log entry the caller reads back (see §1.4, and Go tool spec §6).

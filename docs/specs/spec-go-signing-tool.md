@@ -39,7 +39,7 @@ correctness bug that manifests as "signature valid but hashes differ."
 
 ## 2. CLI contract
 
-```
+```text
 ocsign [flags]
 
 Required:
@@ -311,7 +311,8 @@ Appendix B).
 Provide at least:
 
 1. **`tree-basic/`** — a small app tree:
-   ```
+
+   ```text
    tree-basic/
      appinfo/info.xml         (id = example-app)
      lib/Controller/Page.php
@@ -319,6 +320,7 @@ Provide at least:
      templates/index.php
      .hidden-config
    ```
+
    with:
    - `manifest.canonical.json` — the exact canonical bytes `M` (§3.5), committed
      as a byte-exact file (no trailing newline).
@@ -344,6 +346,7 @@ Provide at least:
    verifier must NOT report `EXTRA_FILE` for these when present on disk.
 
 **Conformance test (both signer and verifier):**
+
 - Recompute `M` from the tree → must equal `manifest.canonical.json` byte-for-byte.
 - Verify `signature.expected.json`'s signature against the test leaf over the
   recomputed `M` → must pass.
