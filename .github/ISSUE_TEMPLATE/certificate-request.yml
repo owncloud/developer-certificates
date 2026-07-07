@@ -1,0 +1,29 @@
+name: Request a code-signing certificate
+description: Submit a CSR to obtain a certificate for your ownCloud app.
+title: "[cert] <your-app-id>"
+labels: ["cert-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Your private key must never be shared. Paste only your CSR (public key).
+        Your CSR `CN` must equal your app's `appinfo/info.xml` `id`
+        (lowercase; `^[a-z][a-z0-9_-]{1,63}$`).
+  - type: textarea
+    id: csr
+    attributes:
+      label: Certificate Signing Request (PEM)
+      description: The full -----BEGIN CERTIFICATE REQUEST----- block.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: repo
+    attributes:
+      label: App repository (owner/name)
+      description: The GitHub repository that owns this app. Its default branch
+        must contain appinfo/info.xml, and you must be able to commit the
+        challenge file to it.
+      placeholder: example-org/example-app
+    validations:
+      required: true

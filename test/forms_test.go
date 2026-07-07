@@ -18,10 +18,10 @@ type issueForm struct {
 }
 
 type formBody struct {
-	Type        string            `yaml:"type"`
-	ID          string            `yaml:"id"`
-	Attributes  map[string]any    `yaml:"attributes"`
-	Validations map[string]bool   `yaml:"validations"`
+	Type        string          `yaml:"type"`
+	ID          string          `yaml:"id"`
+	Attributes  map[string]any  `yaml:"attributes"`
+	Validations map[string]bool `yaml:"validations"`
 }
 
 // appIdRegex is the security-critical appId grammar from design §4.1. The

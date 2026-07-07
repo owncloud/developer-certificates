@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report abuse or a lost signing key (Security Advisory / VDP)
+    url: https://github.com/DeepDiver1975/developer-certificates/security/advisories/new
+    about: >-
+      If you have lost your private key, or are reporting someone else's malicious
+      app, do NOT open a revocation issue (you cannot sign it). Report privately
+      through our GitHub Security Advisory. The security team verifies and revokes.
