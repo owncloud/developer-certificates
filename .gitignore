@@ -1,0 +1,12 @@
+# Local tooling / planning artifacts — never commit
+docs/superpowers/
+
+# Go
+*.test
+*.out
+
+# Editor / OS cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
