@@ -1,0 +1,10 @@
+{
+  "appId": "core",
+  "owner": {
+    "origin": "owncloud",
+    "repo": "owncloud/core"
+  },
+  "claimedAt": "2026-07-06T00:00:00Z",
+  "reserved": true,
+  "certificates": []
+}

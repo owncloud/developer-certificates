@@ -18,5 +18,4 @@ jobs:
         with:
           go-version: stable
       - name: Run conformance harness
-        working-directory: test
         run: go test -v ./...
