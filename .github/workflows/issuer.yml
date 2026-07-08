@@ -1,0 +1,41 @@
+name: issuer
+
+# The issuer bot polls open certificate-request issues and processes them
+# (enrollment spec §4). It runs on a schedule and on issue events; it never acts
+# on human comment events (spec §2: polling, not comment-triggered).
+on:
+  schedule:
+    - cron: "*/10 * * * *" # spec §11: 10-minute poll cadence
+  issues:
+    types: [opened, edited, labeled]
+
+# All ledger reads/writes are serialized under one concurrency group so FCFS is
+# correct; in-progress runs are never cancelled (spec §2, design §6).
+concurrency:
+  group: ledger-write
+  cancel-in-progress: false
+
+# Minimal permissions (design §10): the bot reads/writes issues, comments and
+# labels, and writes the ledger via repo contents. No broad org scopes.
+permissions:
+  issues: write
+  contents: write
+
+jobs:
+  issue:
+    name: issue
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: stable
+      - name: Run issuer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUER_BOT_LOGIN: ${{ vars.ISSUER_BOT_LOGIN }}
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+          VAULT_TRANSIT_KEY: ${{ vars.VAULT_TRANSIT_KEY }}
+          INTERMEDIATE_CERT: resources/codesigning/intermediates/intermediate-g2.crt
+        run: go run ./cmd/issuer
