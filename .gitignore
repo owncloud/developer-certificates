@@ -1,5 +1,6 @@
 # Local tooling / planning artifacts — never commit
 docs/superpowers/
+.superpowers/
 
 # Go
 *.test
