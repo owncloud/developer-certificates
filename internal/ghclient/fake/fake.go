@@ -22,6 +22,9 @@ type blob struct {
 type Client struct {
 	// Issues are the open certificate requests ListOpenCertRequests returns.
 	Issues []ghclient.Issue
+	// RevocationIssues are the open revocation requests
+	// ListOpenRevocationRequests returns.
+	RevocationIssues []ghclient.Issue
 	// OwnCommentsByIssue holds the bot's own comments per issue number.
 	OwnCommentsByIssue map[int][]ghclient.Comment
 	// Files maps "repo\x00path" to file content for GetFile.
@@ -34,6 +37,11 @@ type Client struct {
 	LabelsAdded    map[int][]string
 	LabelsRemoved  map[int][]string
 	Closed         map[int]bool
+
+	// FailNextPutWithConflict, when true, makes the next PutLedger call return
+	// ghclient.ErrConflict and resets itself. Lets tests exercise the
+	// read-modify-write conflict-retry loop deterministically.
+	FailNextPutWithConflict bool
 
 	// nextSHA feeds deterministic blob SHAs.
 	nextSHA int
@@ -77,6 +85,10 @@ func (c *Client) ListOpenCertRequests(context.Context) ([]ghclient.Issue, error)
 	return c.Issues, nil
 }
 
+func (c *Client) ListOpenRevocationRequests(context.Context) ([]ghclient.Issue, error) {
+	return c.RevocationIssues, nil
+}
+
 func (c *Client) OwnComments(_ context.Context, issue int) ([]ghclient.Comment, error) {
 	return c.OwnCommentsByIssue[issue], nil
 }
@@ -114,6 +126,10 @@ func (c *Client) GetLedger(_ context.Context, appID string) ([]byte, string, err
 }
 
 func (c *Client) PutLedger(_ context.Context, appID string, content []byte, prevSHA, _ string) error {
+	if c.FailNextPutWithConflict {
+		c.FailNextPutWithConflict = false
+		return ghclient.ErrConflict
+	}
 	existing, ok := c.Ledgers[appID]
 	switch {
 	case !ok && prevSHA != "":

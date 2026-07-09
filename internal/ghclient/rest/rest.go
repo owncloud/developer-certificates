@@ -30,6 +30,7 @@ const (
 	acceptHeader     = "application/vnd.github+json"
 	apiVersion       = "2022-11-28"
 	certRequestLabel = "cert-request"
+	revocationLabel  = "revocation-request"
 )
 
 // Config wires the REST client.
@@ -114,7 +115,17 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) (in
 }
 
 func (c *Client) ListOpenCertRequests(ctx context.Context) ([]ghclient.Issue, error) {
-	path := fmt.Sprintf("/repos/%s/issues?state=open&labels=%s&per_page=100", c.cfg.Repo, certRequestLabel)
+	return c.listOpenIssues(ctx, certRequestLabel)
+}
+
+func (c *Client) ListOpenRevocationRequests(ctx context.Context) ([]ghclient.Issue, error) {
+	return c.listOpenIssues(ctx, revocationLabel)
+}
+
+// listOpenIssues fetches open issues carrying the given label, skipping PRs
+// (the issues endpoint also returns them).
+func (c *Client) listOpenIssues(ctx context.Context, label string) ([]ghclient.Issue, error) {
+	path := fmt.Sprintf("/repos/%s/issues?state=open&labels=%s&per_page=100", c.cfg.Repo, label)
 	var raw []struct {
 		Number int    `json:"number"`
 		Body   string `json:"body"`
