@@ -126,3 +126,42 @@ func TestVerifyRejectsTampered(t *testing.T) {
 		t.Errorf("Verify err = %v, want ErrInvalidCMS on tampered input", err)
 	}
 }
+
+func TestVerifyReturnsActualSignerNotBundledCert(t *testing.T) {
+	requireOpenSSL(t)
+	// Create two independent self-signed leaves: one for the attacker-app signer,
+	// one for the victim-app bundled cert.
+	signerDir := t.TempDir()
+	signerKey, signerCert := makeLeaf(t, signerDir, "attacker-app")
+
+	bundledDir := t.TempDir()
+	_, bundledCert := makeLeaf(t, bundledDir, "victim-app")
+
+	// Build a hostile CMS: sign with the attacker's key but bundle the victim's cert.
+	// This tests that -signer returns ONLY the verified signer, not the bundled cert.
+	cmd := exec.Command("openssl", "cms", "-sign",
+		"-signer", signerCert, "-inkey", signerKey,
+		"-certfile", bundledCert,
+		"-outform", "PEM", "-nodetach")
+	cmd.Stdin = bytes.NewReader([]byte("revoke"))
+	var out, errb bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &errb
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("openssl cms -sign with -certfile: %v: %s", err, errb.String())
+	}
+	hostileCMS := out.Bytes()
+
+	// Verify the hostile CMS.
+	res, err := New().Verify(context.Background(), hostileCMS)
+	if err != nil {
+		t.Fatalf("Verify hostile CMS: %v", err)
+	}
+
+	// The returned signer cert MUST be the attacker-app (the verified signer),
+	// NOT the victim-app (the bundled cert). This proves the adapter binds to the
+	// verified signer, not an attacker-chosen bundled cert.
+	if got := res.SignerCert.Subject.CommonName; got != "attacker-app" {
+		t.Errorf("signer CN = %q, want attacker-app (verified signer); got victim-bundled cert instead", got)
+	}
+}
