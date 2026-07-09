@@ -1,0 +1,38 @@
+name: revocation
+
+# The revocation bot polls open revocation-request issues and processes the
+# self-service, CMS-signed path (enrollment spec §5.1). It runs on a schedule and
+# on issue events; it never acts on human comment events (spec §2: polling, not
+# comment-triggered).
+on:
+  schedule:
+    - cron: "*/10 * * * *" # spec §11: 10-minute poll cadence
+  issues:
+    types: [opened, edited, labeled]
+
+# Shares the issuer's concurrency group so ledger reads/writes across both bots
+# are serialized; in-progress runs are never cancelled (spec §2, design §6).
+concurrency:
+  group: ledger-write
+  cancel-in-progress: false
+
+# Minimal permissions (design §10): read/write issues, comments and labels, and
+# write the ledger via repo contents. No Vault, no broad org scopes.
+permissions:
+  issues: write
+  contents: write
+
+jobs:
+  revoke:
+    name: revoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: stable
+      - name: Run revoker
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUER_BOT_LOGIN: ${{ vars.ISSUER_BOT_LOGIN }}
+        run: go run ./cmd/revoker
