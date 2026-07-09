@@ -15,9 +15,11 @@
 //	VAULT_TOKEN        Vault token
 //	VAULT_TRANSIT_KEY  Transit key name for the intermediate
 //	INTERMEDIATE_CERT  path to the intermediate CA PEM (public)
+//	CRLGEN_ALLOW_LOCAL set to "1" to allow a fresh in-memory intermediate (dry-run only)
 //
-// When the Vault variables are absent, crlgen falls back to a fresh in-memory
-// intermediate (dry-run / local only — never a real published CRL).
+// When VAULT_ADDR is not set, crlgen requires CRLGEN_ALLOW_LOCAL=1 to use a fresh
+// in-memory intermediate (dry-run / local only — never a real published CRL). Without
+// this explicit opt-in, missing Vault config will cause crlgen to fail.
 package main
 
 import (
@@ -50,7 +52,8 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	sgn, err := newSigner(time.Now().UTC())
+	now := time.Now().UTC()
+	sgn, err := newSigner(now)
 	if err != nil {
 		return err
 	}
@@ -61,7 +64,7 @@ func run(ctx context.Context) error {
 	}
 	log.Printf("crlgen: loaded %d ledger(s)", len(ledgers))
 
-	tmpl, err := crl.Build(ledgers, time.Now().UTC())
+	tmpl, err := crl.Build(ledgers, now)
 	if err != nil {
 		return err
 	}
@@ -82,8 +85,10 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-// newSigner selects the Vault Transit signer when its env is present, otherwise
-// a fresh in-memory intermediate for dry-runs.
+// newSigner selects the signer based on configuration:
+//   - If VAULT_ADDR is set: use Vault Transit with the issuer certificate from INTERMEDIATE_CERT
+//   - Else if CRLGEN_ALLOW_LOCAL=1: use a fresh in-memory intermediate (dry-run only, logs warning)
+//   - Otherwise: return an error (production workflow must never downgrade silently)
 func newSigner(now time.Time) (signer.Signer, error) {
 	if os.Getenv("VAULT_ADDR") != "" {
 		issuer, err := loadCert(os.Getenv("INTERMEDIATE_CERT"))
@@ -96,8 +101,11 @@ func newSigner(now time.Time) (signer.Signer, error) {
 			KeyName: os.Getenv("VAULT_TRANSIT_KEY"),
 		}, issuer)
 	}
-	log.Printf("crlgen: VAULT_ADDR unset — using an in-memory intermediate (dry-run only)")
-	return local.New(rand.Reader, now)
+	if os.Getenv("CRLGEN_ALLOW_LOCAL") == "1" {
+		log.Printf("crlgen: VAULT_ADDR unset — using an in-memory intermediate (DRY-RUN ONLY; do not publish)")
+		return local.New(rand.Reader, now)
+	}
+	return nil, fmt.Errorf("crlgen: VAULT_ADDR is not set; refusing to sign with a throwaway key (set CRLGEN_ALLOW_LOCAL=1 for a local dry-run)")
 }
 
 // loadCert reads and parses a PEM certificate from path.

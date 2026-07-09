@@ -58,3 +58,10 @@ func TestLoadAllEmptyDir(t *testing.T) {
 		t.Errorf("loaded %d ledgers from empty dir, want 0", len(ls))
 	}
 }
+
+func TestLoadAllMissingDirIsError(t *testing.T) {
+	_, err := LoadAll(filepath.Join(t.TempDir(), "does-not-exist"))
+	if err == nil {
+		t.Error("expected error for missing directory, got nil")
+	}
+}

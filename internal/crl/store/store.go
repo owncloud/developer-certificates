@@ -6,6 +6,7 @@ package store
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 
@@ -14,9 +15,17 @@ import (
 
 // LoadAll reads and parses every <dir>/*.json ledger file, sorted by path for
 // deterministic output. A malformed or schema-invalid file is a hard error: the
-// CRL must never silently omit a ledger's revocations (spec §3.2). An empty or
-// absent set of files yields an empty slice and no error.
+// CRL must never silently omit a ledger's revocations (spec §3.2). An empty but
+// existing directory yields an empty slice and no error. A missing directory
+// is an error.
 func LoadAll(dir string) ([]*ledger.Ledger, error) {
+	info, err := os.Stat(dir)
+	if err != nil {
+		return nil, fmt.Errorf("store: ledger dir %s: %w", dir, err)
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("store: %s is not a directory", dir)
+	}
 	paths, err := filepath.Glob(filepath.Join(dir, "*.json"))
 	if err != nil {
 		return nil, fmt.Errorf("store: glob %s: %w", dir, err)
