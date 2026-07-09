@@ -31,6 +31,13 @@ type Signer interface {
 	// intermediate, binding subjectPub as the certificate's public key. It
 	// returns the signed certificate in DER form.
 	Sign(ctx context.Context, template *x509.Certificate, subjectPub any) (der []byte, err error)
+
+	// SignCRL signs the given CRL template under the intermediate CA and returns
+	// the CRL in DER form (RFC 5280). Like Sign, the backend decides where the
+	// key lives; for Vault it never enters the runner. The issuer certificate
+	// (IssuerCertificate) is the CRL issuer, so it must have the crlSign key
+	// usage and a SubjectKeyId (design §2.2).
+	SignCRL(ctx context.Context, template *x509.RevocationList) (der []byte, err error)
 }
 
 // FormatSerial renders a certificate serial as the ledger's canonical
