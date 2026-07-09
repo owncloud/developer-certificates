@@ -50,6 +50,10 @@ type GitHub interface {
 	// process this poll.
 	ListOpenCertRequests(ctx context.Context) ([]Issue, error)
 
+	// ListOpenRevocationRequests returns the open revocation-request issues to
+	// process this poll (enrollment spec §5.1).
+	ListOpenRevocationRequests(ctx context.Context) ([]Issue, error)
+
 	// OwnComments returns only the comments authored by the bot/App identity on
 	// the given issue, oldest first (spec §2).
 	OwnComments(ctx context.Context, issue int) ([]Comment, error)

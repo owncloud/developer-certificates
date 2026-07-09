@@ -22,6 +22,9 @@ type blob struct {
 type Client struct {
 	// Issues are the open certificate requests ListOpenCertRequests returns.
 	Issues []ghclient.Issue
+	// RevocationIssues are the open revocation requests
+	// ListOpenRevocationRequests returns.
+	RevocationIssues []ghclient.Issue
 	// OwnCommentsByIssue holds the bot's own comments per issue number.
 	OwnCommentsByIssue map[int][]ghclient.Comment
 	// Files maps "repo\x00path" to file content for GetFile.
@@ -75,6 +78,10 @@ func (c *Client) SetLedger(appID string, content []byte) string {
 
 func (c *Client) ListOpenCertRequests(context.Context) ([]ghclient.Issue, error) {
 	return c.Issues, nil
+}
+
+func (c *Client) ListOpenRevocationRequests(context.Context) ([]ghclient.Issue, error) {
+	return c.RevocationIssues, nil
 }
 
 func (c *Client) OwnComments(_ context.Context, issue int) ([]ghclient.Comment, error) {
