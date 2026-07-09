@@ -146,6 +146,12 @@ func TestProcessAlreadyRevoked(t *testing.T) {
 	seed.Certificates[0].Reason = "self-service"
 	d, gh := harness(t, cert, seed, now)
 
+	// Capture ledger SHA before Process to verify idempotent no-op
+	_, shaBefore, err := gh.GetLedger(context.Background(), testAppID)
+	if err != nil {
+		t.Fatalf("GetLedger before Process: %v", err)
+	}
+
 	if err := Process(context.Background(), d, newIssue()); err != nil {
 		t.Fatalf("Process: %v", err)
 	}
@@ -154,6 +160,15 @@ func TestProcessAlreadyRevoked(t *testing.T) {
 	}
 	if !gh.Closed[testIssue] {
 		t.Error("already-revoked issue should be closed")
+	}
+
+	// Verify ledger was not rewritten (idempotent no-op)
+	_, shaAfter, err := gh.GetLedger(context.Background(), testAppID)
+	if err != nil {
+		t.Fatalf("GetLedger after Process: %v", err)
+	}
+	if shaBefore != shaAfter {
+		t.Errorf("ledger was rewritten on an already-revoked cert (want idempotent no-op): SHA before=%s, after=%s", shaBefore, shaAfter)
 	}
 }
 
