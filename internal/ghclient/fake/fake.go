@@ -38,6 +38,11 @@ type Client struct {
 	LabelsRemoved  map[int][]string
 	Closed         map[int]bool
 
+	// FailNextPutWithConflict, when true, makes the next PutLedger call return
+	// ghclient.ErrConflict and resets itself. Lets tests exercise the
+	// read-modify-write conflict-retry loop deterministically.
+	FailNextPutWithConflict bool
+
 	// nextSHA feeds deterministic blob SHAs.
 	nextSHA int
 }
@@ -121,6 +126,10 @@ func (c *Client) GetLedger(_ context.Context, appID string) ([]byte, string, err
 }
 
 func (c *Client) PutLedger(_ context.Context, appID string, content []byte, prevSHA, _ string) error {
+	if c.FailNextPutWithConflict {
+		c.FailNextPutWithConflict = false
+		return ghclient.ErrConflict
+	}
 	existing, ok := c.Ledgers[appID]
 	switch {
 	case !ok && prevSHA != "":

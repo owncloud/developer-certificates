@@ -44,7 +44,7 @@ type Clock interface {
 type Deps struct {
 	GH    ghclient.GitHub
 	CMS   cms.Verifier
-	Clock Clock
+	Clock Clock // Currently reserved: the pipeline uses each cert's own NotBefore as revokedFrom for a hard revoke (spec §5.1). Clock exists for symmetry with the issuer and future requester-supplied revokedFrom >= notBefore.
 }
 
 // Process runs one poll iteration for a single revocation-request issue (spec

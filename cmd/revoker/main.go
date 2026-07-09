@@ -42,7 +42,7 @@ func main() {
 func run(ctx context.Context) error {
 	gh, err := rest.New(rest.Config{
 		Token:    os.Getenv("GITHUB_TOKEN"),
-		BotLogin: os.Getenv("ISSUER_BOT_LOGIN"),
+		BotLogin: os.Getenv("ISSUER_BOT_LOGIN"), // Unused by this binary today (revocation pipeline does not read issue comments); set for consistency with cmd/issuer.
 		Repo:     os.Getenv("GITHUB_REPOSITORY"),
 	})
 	if err != nil {

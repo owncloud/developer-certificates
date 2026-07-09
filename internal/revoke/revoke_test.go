@@ -252,3 +252,33 @@ func TestProcessIdempotentRevoked(t *testing.T) {
 		t.Error("already-revoked issue was not a no-op")
 	}
 }
+
+func TestProcessConflictRetry(t *testing.T) {
+	now := time.Date(2026, 7, 8, 10, 0, 0, 0, time.UTC)
+	cert := makeCert(t, testAppID, now.Add(-24*time.Hour))
+	d, gh := harness(t, cert, seededLedger(cert, now), now)
+
+	// Inject a one-shot conflict to exercise the retry loop.
+	gh.FailNextPutWithConflict = true
+
+	if err := Process(context.Background(), d, newIssue()); err != nil {
+		t.Fatalf("Process with conflict retry: %v", err)
+	}
+
+	// Verify the revocation persisted through the retry.
+	out, _, err := gh.GetLedger(context.Background(), testAppID)
+	if err != nil {
+		t.Fatalf("GetLedger: %v", err)
+	}
+	l, err := ledger.Parse(out)
+	if err != nil {
+		t.Fatalf("parse written ledger: %v", err)
+	}
+	c := l.Certificates[0]
+	if c.Status != ledger.StatusRevoked {
+		t.Errorf("status = %q, want revoked (after retry)", c.Status)
+	}
+	if c.RevokedFrom == nil || time.Time(*c.RevokedFrom) != cert.NotBefore {
+		t.Errorf("revokedFrom = %v, want notBefore %v", c.RevokedFrom, cert.NotBefore)
+	}
+}

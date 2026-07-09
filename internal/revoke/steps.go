@@ -48,7 +48,8 @@ func findByFingerprint(l *ledger.Ledger, fp string) int {
 // commits, retrying on a write conflict by re-reading and re-applying (spec §2).
 // The certificate's own NotBefore is the revokedFrom date (hard revoke, spec
 // §5.1). It returns the revoked entry's serial for the delivery comment.
-// Note: the conflict-retry loop mirrors enroll.commitLedger (already tested there).
+// Conflict-retry: re-read and re-apply on a stale-SHA write (spec §2).
+// Exercised by TestProcessConflictRetry via the fake's one-shot conflict hook.
 func (d Deps) revokeInLedger(ctx context.Context, appID, fp string, l *ledger.Ledger, prevSHA string) (serial string, revokedFrom ledger.Timestamp, err error) {
 	for attempt := 0; attempt < maxLedgerRetries; attempt++ {
 		idx := findByFingerprint(l, fp)
