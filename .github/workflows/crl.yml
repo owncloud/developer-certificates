@@ -1,0 +1,50 @@
+name: crl
+
+# The CRL bot regenerates crl/developers.crl from the public ledger
+# (attestation-and-crl spec §3). It runs daily (so nextUpdate stays fresh) and
+# after each revocation workflow completes, then commits the artifact.
+on:
+  schedule:
+    - cron: "0 0 * * *" # daily; keeps nextUpdate fresh (spec §3.1)
+  workflow_dispatch:
+  workflow_run:
+    workflows: [revocation]
+    types: [completed]
+
+# Shares the issuer/revocation concurrency group so all ledger reads/writes are
+# serialized; in-progress runs are never cancelled (enrollment spec §2).
+concurrency:
+  group: ledger-write
+  cancel-in-progress: false
+
+# Minimal permissions (design §10): read the ledger and write + commit the CRL.
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    name: generate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: stable
+      - name: Generate CRL
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+          VAULT_TRANSIT_KEY: ${{ vars.VAULT_TRANSIT_KEY }}
+          INTERMEDIATE_CERT: resources/codesigning/intermediates/intermediate-g2.crt
+        run: go run ./cmd/crlgen
+      - name: Commit CRL if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add crl/developers.crl
+          if git diff --cached --quiet; then
+            echo "CRL unchanged; nothing to commit."
+          else
+            git commit -m "chore: regenerate crl/developers.crl"
+            git push
+          fi

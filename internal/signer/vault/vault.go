@@ -78,6 +78,18 @@ func (s *Signer) Sign(ctx context.Context, template *x509.Certificate, subjectPu
 	return der, nil
 }
 
+// SignCRL builds and signs the CRL via x509.CreateRevocationList, delegating the
+// signature to Vault through the same crypto.Signer adapter used for leaves. The
+// intermediate key never enters the runner.
+func (s *Signer) SignCRL(ctx context.Context, template *x509.RevocationList) ([]byte, error) {
+	cs := &cryptoSigner{ctx: ctx, s: s, pub: s.issuer.PublicKey}
+	der, err := x509.CreateRevocationList(zeroReader{}, template, s.issuer, cs)
+	if err != nil {
+		return nil, fmt.Errorf("vault: create crl: %w", err)
+	}
+	return der, nil
+}
+
 // cryptoSigner adapts Vault Transit to crypto.Signer so x509 can drive it.
 type cryptoSigner struct {
 	ctx context.Context

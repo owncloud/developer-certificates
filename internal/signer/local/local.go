@@ -88,3 +88,13 @@ func (s *Signer) Sign(_ context.Context, template *x509.Certificate, subjectPub 
 	}
 	return der, nil
 }
+
+// SignCRL signs the CRL template under the in-memory intermediate and returns
+// the DER CRL.
+func (s *Signer) SignCRL(_ context.Context, template *x509.RevocationList) ([]byte, error) {
+	der, err := x509.CreateRevocationList(rand.Reader, template, s.cert, s.key)
+	if err != nil {
+		return nil, fmt.Errorf("local: sign crl: %w", err)
+	}
+	return der, nil
+}
