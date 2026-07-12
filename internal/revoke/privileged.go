@@ -3,6 +3,7 @@ package revoke
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/DeepDiver1975/developer-certificates/internal/appid"
@@ -38,7 +39,8 @@ func PrivilegedProcess(ctx context.Context, d PrivilegedDeps, req PrivilegedRequ
 	if _, err := appid.ValidateStrict(req.AppID); err != nil {
 		return fmt.Errorf("privrevoke: appId %q is not a valid appId: %w", req.AppID, err)
 	}
-	if req.Serial == "" {
+	serial := strings.TrimSpace(req.Serial)
+	if serial == "" {
 		return fmt.Errorf("privrevoke: serial is required")
 	}
 	if req.Reason == "" {
@@ -59,9 +61,9 @@ func PrivilegedProcess(ctx context.Context, d PrivilegedDeps, req PrivilegedRequ
 	}
 
 	// Step 3: find the cert by serial.
-	idx := findBySerial(l, req.Serial)
+	idx := findBySerial(l, serial)
 	if idx < 0 {
-		return fmt.Errorf("privrevoke: serial %q not found in ledger for %q", req.Serial, req.AppID)
+		return fmt.Errorf("privrevoke: serial %q not found in ledger for %q", serial, req.AppID)
 	}
 
 	// Step 4: resolve revokedFrom (default: the cert's NotBefore; must be >= it).
@@ -79,7 +81,7 @@ func PrivilegedProcess(ctx context.Context, d PrivilegedDeps, req PrivilegedRequ
 	// Step 5: apply the flip (shared core, conflict-retried). Overwrites an
 	// already-revoked entry — the finder matches by serial regardless of status.
 	if _, err := sd.applyRevocation(ctx, req.AppID,
-		func(lg *ledger.Ledger) int { return findBySerial(lg, req.Serial) },
+		func(lg *ledger.Ledger) int { return findBySerial(lg, serial) },
 		revocation{Reason: req.Reason, RevokedFrom: revokedFrom, Actor: req.Actor},
 		l, prevSHA); err != nil {
 		return err

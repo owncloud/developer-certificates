@@ -28,15 +28,14 @@ func TestPrivilegedRevocationWorkflowInvariants(t *testing.T) {
 		t.Fatalf("parse privileged-revocation.yml: %v", err)
 	}
 
-	// workflow_dispatch present; schedule and issues ABSENT (the security property).
+	// workflow_dispatch is the ONLY trigger (the security property: dispatch-only, §5.2).
 	if _, ok := top.On["workflow_dispatch"]; !ok {
 		t.Error("privileged-revocation.yml: must have a workflow_dispatch trigger")
 	}
-	if _, ok := top.On["schedule"]; ok {
-		t.Error("privileged-revocation.yml: must NOT have a schedule trigger (dispatch-only)")
-	}
-	if _, ok := top.On["issues"]; ok {
-		t.Error("privileged-revocation.yml: must NOT have an issues trigger (external filing must not reach it)")
+	for key := range top.On {
+		if key != "workflow_dispatch" {
+			t.Errorf("privileged-revocation.yml: unexpected trigger %q (must be workflow_dispatch-ONLY, §5.2)", key)
+		}
 	}
 
 	// Shared ledger-write group, never cancelled (§2).

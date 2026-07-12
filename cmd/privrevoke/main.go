@@ -70,6 +70,6 @@ func run(ctx context.Context) error {
 	if err := revoke.PrivilegedProcess(ctx, deps, req); err != nil {
 		return err
 	}
-	log.Printf("privrevoke: revoked serial %s for %s (actor %s)", req.Serial, req.AppID, req.Actor)
+	log.Printf("privrevoke: revoked serial %s for %s (reason %q, actor %s)", req.Serial, req.AppID, req.Reason, req.Actor)
 	return nil
 }

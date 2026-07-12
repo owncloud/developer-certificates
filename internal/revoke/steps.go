@@ -76,8 +76,11 @@ func (d Deps) applyRevocation(ctx context.Context, appID string, find findFunc, 
 		if mErr != nil {
 			return "", fmt.Errorf("revoke: marshal ledger: %w", mErr)
 		}
-		wErr := d.GH.PutLedger(ctx, appID, data, prevSHA,
-			fmt.Sprintf("ledger: revoke %s for %s", cert.Serial, appID))
+		msg := fmt.Sprintf("ledger: revoke %s for %s", cert.Serial, appID)
+		if rev.Actor != "" {
+			msg = fmt.Sprintf("ledger: privileged revoke %s for %s (%s)", cert.Serial, appID, rev.Actor)
+		}
+		wErr := d.GH.PutLedger(ctx, appID, data, prevSHA, msg)
 		if wErr == nil {
 			return cert.Serial, nil
 		}
