@@ -8,7 +8,7 @@ on:
     - cron: "0 0 * * *" # daily; keeps nextUpdate fresh (spec §3.1)
   workflow_dispatch:
   workflow_run:
-    workflows: [revocation]
+    workflows: [revocation, privileged-revocation]
     types: [completed]
 
 # Shares the issuer/revocation concurrency group so all ledger reads/writes are

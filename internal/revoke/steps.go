@@ -44,41 +44,54 @@ func findByFingerprint(l *ledger.Ledger, fp string) int {
 	return -1
 }
 
-// revokeInLedger flips the certificate with fingerprint fp to revoked and
-// commits, retrying on a write conflict by re-reading and re-applying (spec §2).
-// The certificate's own NotBefore is the revokedFrom date (hard revoke, spec
-// §5.1). It returns the revoked entry's serial for the delivery comment.
-// Conflict-retry: re-read and re-apply on a stale-SHA write (spec §2).
-// Exercised by TestProcessConflictRetry via the fake's one-shot conflict hook.
-func (d Deps) revokeInLedger(ctx context.Context, appID, fp string, l *ledger.Ledger, prevSHA string) (serial string, revokedFrom ledger.Timestamp, err error) {
+// revocation is the set of fields a flip writes onto the matched certificate.
+type revocation struct {
+	Reason      string
+	RevokedFrom ledger.Timestamp
+	Actor       string // empty for self-service; github.actor for privileged
+}
+
+// findFunc locates the target certificate's index in a ledger, or -1.
+type findFunc func(*ledger.Ledger) int
+
+// applyRevocation flips the certificate located by find to revoked with the
+// given revocation fields and commits, retrying on a write conflict by
+// re-reading and re-applying (spec §2). It returns the revoked entry's serial.
+// Shared by the self-service (§5.1) and privileged (§5.2) paths; the caller
+// supplies the finder and the revocation values.
+func (d Deps) applyRevocation(ctx context.Context, appID string, find findFunc, rev revocation, l *ledger.Ledger, prevSHA string) (serial string, err error) {
 	for attempt := 0; attempt < maxLedgerRetries; attempt++ {
-		idx := findByFingerprint(l, fp)
+		idx := find(l)
 		if idx < 0 {
-			return "", ledger.Timestamp{}, fmt.Errorf("revoke: cert %s vanished from ledger %s during retry", fp, appID)
+			return "", fmt.Errorf("revoke: target cert vanished from ledger %s during retry", appID)
 		}
 		cert := &l.Certificates[idx]
-		nb := cert.NotBefore
+		rf := rev.RevokedFrom
 		cert.Status = ledger.StatusRevoked
-		cert.RevokedFrom = &nb
-		cert.Reason = "self-service"
+		cert.RevokedFrom = &rf
+		cert.Reason = rev.Reason
+		cert.Actor = rev.Actor
 
 		data, mErr := l.Marshal()
 		if mErr != nil {
-			return "", ledger.Timestamp{}, fmt.Errorf("revoke: marshal ledger: %w", mErr)
+			return "", fmt.Errorf("revoke: marshal ledger: %w", mErr)
 		}
-		wErr := d.GH.PutLedger(ctx, appID, data, prevSHA,
-			fmt.Sprintf("ledger: revoke %s for %s", cert.Serial, appID))
+		msg := fmt.Sprintf("ledger: revoke %s for %s", cert.Serial, appID)
+		if rev.Actor != "" {
+			msg = fmt.Sprintf("ledger: privileged revoke %s for %s (%s)", cert.Serial, appID, rev.Actor)
+		}
+		wErr := d.GH.PutLedger(ctx, appID, data, prevSHA, msg)
 		if wErr == nil {
-			return cert.Serial, nb, nil
+			return cert.Serial, nil
 		}
 		if !errors.Is(wErr, ghclient.ErrConflict) {
-			return "", ledger.Timestamp{}, fmt.Errorf("revoke: write ledger: %w", wErr)
+			return "", fmt.Errorf("revoke: write ledger: %w", wErr)
 		}
 		// Conflict: another write landed first. Re-read and re-apply.
 		l, prevSHA, err = d.loadLedger(ctx, appID)
 		if err != nil {
-			return "", ledger.Timestamp{}, err
+			return "", err
 		}
 	}
-	return "", ledger.Timestamp{}, fmt.Errorf("revoke: ledger write for %s conflicted after %d retries", appID, maxLedgerRetries)
+	return "", fmt.Errorf("revoke: ledger write for %s conflicted after %d retries", appID, maxLedgerRetries)
 }

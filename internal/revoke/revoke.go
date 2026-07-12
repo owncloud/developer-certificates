@@ -102,7 +102,12 @@ func Process(ctx context.Context, d Deps, issue ghclient.Issue) error {
 	}
 
 	// Step 4: flip to revoked (conflict-retried).
-	serial, revokedFrom, err := d.revokeInLedger(ctx, appID, fp, l, prevSHA)
+	// Self-service (§5.1): hard revoke from the cert's own NotBefore, no actor.
+	revokedFrom := l.Certificates[idx].NotBefore
+	serial, err := d.applyRevocation(ctx, appID,
+		func(lg *ledger.Ledger) int { return findByFingerprint(lg, fp) },
+		revocation{Reason: "self-service", RevokedFrom: revokedFrom},
+		l, prevSHA)
 	if err != nil {
 		return err
 	}
