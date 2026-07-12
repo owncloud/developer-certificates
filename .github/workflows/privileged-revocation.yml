@@ -1,0 +1,53 @@
+name: privileged-revocation
+
+# Authoritative, org-gated certificate revocation (enrollment spec §5.2). This is
+# a workflow_dispatch-ONLY workflow: it has no schedule and no issue trigger, so
+# external issue filing can never reach it. GitHub restricts workflow_dispatch to
+# users with write access to the repo — that platform gate is the org-member
+# authorization; the triggering github.actor is recorded in the ledger.
+on:
+  workflow_dispatch:
+    inputs:
+      app_id:
+        description: "Target appId (the ledger/<appId>.json filename)"
+        required: true
+      serial:
+        description: 'Target certificate serial ("0x…")'
+        required: true
+      reason:
+        description: "Why this certificate is being revoked (recorded in the ledger)"
+        required: true
+      revoked_from:
+        description: "Optional RFC3339 UTC date (blank = the cert's notBefore)"
+        required: false
+
+# Shares the issuer/revocation/CRL concurrency group so all ledger writes are
+# serialized; in-progress runs are never cancelled (enrollment spec §2).
+concurrency:
+  group: ledger-write
+  cancel-in-progress: false
+
+# Minimal permissions (design §10): write the ledger via repo contents. No Vault,
+# no issue scopes.
+permissions:
+  contents: write
+
+jobs:
+  revoke:
+    name: revoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: stable
+      - name: Run privileged revocation
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUER_BOT_LOGIN: ${{ vars.ISSUER_BOT_LOGIN }}
+          APP_ID: ${{ inputs.app_id }}
+          SERIAL: ${{ inputs.serial }}
+          REASON: ${{ inputs.reason }}
+          REVOKED_FROM: ${{ inputs.revoked_from }}
+          ACTOR: ${{ github.actor }}
+        run: go run ./cmd/privrevoke
