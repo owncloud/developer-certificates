@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/cms"
+	"github.com/owncloud/developer-certificates/internal/cms"
 )
 
 func TestFakeReturnsResult(t *testing.T) {

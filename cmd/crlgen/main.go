@@ -35,12 +35,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/crl"
-	"github.com/DeepDiver1975/developer-certificates/internal/crl/store"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer/local"
-	pemsigner "github.com/DeepDiver1975/developer-certificates/internal/signer/pem"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer/vault"
+	"github.com/owncloud/developer-certificates/internal/crl"
+	"github.com/owncloud/developer-certificates/internal/crl/store"
+	"github.com/owncloud/developer-certificates/internal/signer"
+	"github.com/owncloud/developer-certificates/internal/signer/local"
+	pemsigner "github.com/owncloud/developer-certificates/internal/signer/pem"
+	"github.com/owncloud/developer-certificates/internal/signer/vault"
 )
 
 const (

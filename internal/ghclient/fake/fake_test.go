@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
 )
 
 func TestGetFileNotFound(t *testing.T) {

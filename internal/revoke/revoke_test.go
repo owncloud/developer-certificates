@@ -12,12 +12,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/cms"
-	cmsfake "github.com/DeepDiver1975/developer-certificates/internal/cms/fake"
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
-	ghfake "github.com/DeepDiver1975/developer-certificates/internal/ghclient/fake"
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer"
+	"github.com/owncloud/developer-certificates/internal/cms"
+	cmsfake "github.com/owncloud/developer-certificates/internal/cms/fake"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
+	ghfake "github.com/owncloud/developer-certificates/internal/ghclient/fake"
+	"github.com/owncloud/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/signer"
 )
 
 type fixedClock struct{ t time.Time }

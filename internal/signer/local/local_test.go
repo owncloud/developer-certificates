@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/certtmpl"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer"
+	"github.com/owncloud/developer-certificates/internal/certtmpl"
+	"github.com/owncloud/developer-certificates/internal/signer"
 )
 
 // TestSignAndVerify issues a leaf through the local signer and verifies the

@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/revoke"
+	"github.com/owncloud/developer-certificates/internal/revoke"
 )
 
 // TestRevocationWorkflowInvariants pins the security-critical properties of the

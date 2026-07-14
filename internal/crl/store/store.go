@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/ledger"
 )
 
 // LoadAll reads and parses every <dir>/*.json ledger file, sorted by path for

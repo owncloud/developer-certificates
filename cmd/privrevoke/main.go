@@ -27,8 +27,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient/rest"
-	"github.com/DeepDiver1975/developer-certificates/internal/revoke"
+	"github.com/owncloud/developer-certificates/internal/ghclient/rest"
+	"github.com/owncloud/developer-certificates/internal/revoke"
 )
 
 // realClock is the production Clock.

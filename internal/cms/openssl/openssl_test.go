@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/cms"
+	"github.com/owncloud/developer-certificates/internal/cms"
 )
 
 // requireOpenSSL skips the test when the openssl CLI is unavailable, so the

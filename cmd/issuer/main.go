@@ -30,11 +30,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/enroll"
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient/rest"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer"
-	pemsigner "github.com/DeepDiver1975/developer-certificates/internal/signer/pem"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer/vault"
+	"github.com/owncloud/developer-certificates/internal/enroll"
+	"github.com/owncloud/developer-certificates/internal/ghclient/rest"
+	"github.com/owncloud/developer-certificates/internal/signer"
+	pemsigner "github.com/owncloud/developer-certificates/internal/signer/pem"
+	"github.com/owncloud/developer-certificates/internal/signer/vault"
 )
 
 // realClock is the production Clock.

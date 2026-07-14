@@ -1,4 +1,4 @@
-module github.com/DeepDiver1975/developer-certificates
+module github.com/owncloud/developer-certificates
 
 go 1.26
 

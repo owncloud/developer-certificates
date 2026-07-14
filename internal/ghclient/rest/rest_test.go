@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
 )
 
 func newTestClient(t *testing.T, h http.HandlerFunc) (*Client, func()) {

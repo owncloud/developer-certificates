@@ -21,13 +21,13 @@ import (
 	"io"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/appid"
-	"github.com/DeepDiver1975/developer-certificates/internal/appinfo"
-	"github.com/DeepDiver1975/developer-certificates/internal/challenge"
-	"github.com/DeepDiver1975/developer-certificates/internal/csr"
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer"
+	"github.com/owncloud/developer-certificates/internal/appid"
+	"github.com/owncloud/developer-certificates/internal/appinfo"
+	"github.com/owncloud/developer-certificates/internal/challenge"
+	"github.com/owncloud/developer-certificates/internal/csr"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/signer"
 )
 
 // Labels are the issue-state vocabulary (spec §9). Every terminal state has an

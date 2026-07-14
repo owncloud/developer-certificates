@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/challenge"
+	"github.com/owncloud/developer-certificates/internal/challenge"
 )
 
 // TestChallengePathSingleSource guards the single source of truth for the

@@ -5,7 +5,7 @@ package fake
 import (
 	"context"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/cms"
+	"github.com/owncloud/developer-certificates/internal/cms"
 )
 
 // Verifier is a cms.Verifier double. Set Result for a success or Err for a

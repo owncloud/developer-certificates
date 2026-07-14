@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/appid"
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/appid"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ledger"
 )
 
 // PrivilegedDeps are the privileged path's injected collaborators. No CMS

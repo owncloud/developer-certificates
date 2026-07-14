@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/appid"
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/appid"
+	"github.com/owncloud/developer-certificates/internal/ledger"
 )
 
 // TestLedgerSeeds pins the invariants of the committed first-party reservation

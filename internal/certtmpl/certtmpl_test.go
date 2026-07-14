@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/appid"
+	"github.com/owncloud/developer-certificates/internal/appid"
 )
 
 // testKey returns a throwaway EC P-384 public key to stand in for a CSR

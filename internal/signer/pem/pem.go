@@ -17,7 +17,7 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/signer"
+	"github.com/owncloud/developer-certificates/internal/signer"
 )
 
 // Config wires the PEM-backed signer.

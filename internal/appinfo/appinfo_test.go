@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/appid"
+	"github.com/owncloud/developer-certificates/internal/appid"
 )
 
 func readFixture(t *testing.T, name string) []byte {
