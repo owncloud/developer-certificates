@@ -37,5 +37,6 @@ jobs:
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
           VAULT_TRANSIT_KEY: ${{ vars.VAULT_TRANSIT_KEY }}
+          INTERMEDIATE_KEY_PEM: ${{ secrets.INTERMEDIATE_KEY_PEM }}
           INTERMEDIATE_CERT: resources/codesigning/intermediates/intermediate-g2.crt
         run: go run ./cmd/issuer
