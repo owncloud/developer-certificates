@@ -17,6 +17,7 @@
 //	VAULT_TOKEN          Vault token
 //	VAULT_TRANSIT_KEY    Transit key name for the intermediate
 //	INTERMEDIATE_CERT    path to the intermediate CA PEM (public)
+//	INTERMEDIATE_KEY_PEM raw PEM intermediate private key (used when VAULT_ADDR unset)
 package main
 
 import (
@@ -31,6 +32,8 @@ import (
 
 	"github.com/DeepDiver1975/developer-certificates/internal/enroll"
 	"github.com/DeepDiver1975/developer-certificates/internal/ghclient/rest"
+	"github.com/DeepDiver1975/developer-certificates/internal/signer"
+	pemsigner "github.com/DeepDiver1975/developer-certificates/internal/signer/pem"
 	"github.com/DeepDiver1975/developer-certificates/internal/signer/vault"
 )
 
@@ -55,15 +58,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	issuerCert, err := loadCert(os.Getenv("INTERMEDIATE_CERT"))
-	if err != nil {
-		return err
-	}
-	sgn, err := vault.New(vault.Config{
-		Address: os.Getenv("VAULT_ADDR"),
-		Token:   os.Getenv("VAULT_TOKEN"),
-		KeyName: os.Getenv("VAULT_TRANSIT_KEY"),
-	}, issuerCert)
+	sgn, err := newSigner()
 	if err != nil {
 		return err
 	}
@@ -89,6 +84,28 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("%d of %d issue(s) failed this poll", failures, len(issues))
 	}
 	return nil
+}
+
+// newSigner selects the signer by configuration (design §19 / bootstrap design §2.1):
+//   - VAULT_ADDR set        → Vault Transit (preferred; key never enters runner)
+//   - INTERMEDIATE_KEY_PEM  → raw PEM intermediate key (weaker fallback, risk R1)
+//   - otherwise             → hard error (never sign with a throwaway key)
+func newSigner() (signer.Signer, error) {
+	issuerCert, err := loadCert(os.Getenv("INTERMEDIATE_CERT"))
+	if err != nil {
+		return nil, err
+	}
+	if os.Getenv("VAULT_ADDR") != "" {
+		return vault.New(vault.Config{
+			Address: os.Getenv("VAULT_ADDR"),
+			Token:   os.Getenv("VAULT_TOKEN"),
+			KeyName: os.Getenv("VAULT_TRANSIT_KEY"),
+		}, issuerCert)
+	}
+	if os.Getenv("INTERMEDIATE_KEY_PEM") != "" {
+		return pemsigner.New(pemsigner.Config{KeyPEM: os.Getenv("INTERMEDIATE_KEY_PEM"), Issuer: issuerCert})
+	}
+	return nil, fmt.Errorf("issuer: no signer configured (set VAULT_ADDR or INTERMEDIATE_KEY_PEM)")
 }
 
 // loadCert reads and parses a PEM certificate from path.

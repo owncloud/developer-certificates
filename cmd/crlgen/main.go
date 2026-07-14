@@ -15,11 +15,13 @@
 //	VAULT_TOKEN        Vault token
 //	VAULT_TRANSIT_KEY  Transit key name for the intermediate
 //	INTERMEDIATE_CERT  path to the intermediate CA PEM (public)
+//	INTERMEDIATE_KEY_PEM raw PEM intermediate private key (used when VAULT_ADDR unset)
 //	CRLGEN_ALLOW_LOCAL set to "1" to allow a fresh in-memory intermediate (dry-run only)
 //
-// When VAULT_ADDR is not set, crlgen requires CRLGEN_ALLOW_LOCAL=1 to use a fresh
+// When VAULT_ADDR is not set, crlgen next tries INTERMEDIATE_KEY_PEM (raw PEM
+// intermediate key); failing that it requires CRLGEN_ALLOW_LOCAL=1 to use a fresh
 // in-memory intermediate (dry-run / local only — never a real published CRL). Without
-// this explicit opt-in, missing Vault config will cause crlgen to fail.
+// any of these, missing Vault config will cause crlgen to fail.
 package main
 
 import (
@@ -37,6 +39,7 @@ import (
 	"github.com/DeepDiver1975/developer-certificates/internal/crl/store"
 	"github.com/DeepDiver1975/developer-certificates/internal/signer"
 	"github.com/DeepDiver1975/developer-certificates/internal/signer/local"
+	pemsigner "github.com/DeepDiver1975/developer-certificates/internal/signer/pem"
 	"github.com/DeepDiver1975/developer-certificates/internal/signer/vault"
 )
 
@@ -87,6 +90,7 @@ func run(ctx context.Context) error {
 
 // newSigner selects the signer based on configuration:
 //   - If VAULT_ADDR is set: use Vault Transit with the issuer certificate from INTERMEDIATE_CERT
+//   - Else if INTERMEDIATE_KEY_PEM is set: use the raw PEM intermediate key (weaker fallback)
 //   - Else if CRLGEN_ALLOW_LOCAL=1: use a fresh in-memory intermediate (dry-run only, logs warning)
 //   - Otherwise: return an error (production workflow must never downgrade silently)
 func newSigner(now time.Time) (signer.Signer, error) {
@@ -100,6 +104,13 @@ func newSigner(now time.Time) (signer.Signer, error) {
 			Token:   os.Getenv("VAULT_TOKEN"),
 			KeyName: os.Getenv("VAULT_TRANSIT_KEY"),
 		}, issuer)
+	}
+	if os.Getenv("INTERMEDIATE_KEY_PEM") != "" {
+		issuer, err := loadCert(os.Getenv("INTERMEDIATE_CERT"))
+		if err != nil {
+			return nil, err
+		}
+		return pemsigner.New(pemsigner.Config{KeyPEM: os.Getenv("INTERMEDIATE_KEY_PEM"), Issuer: issuer})
 	}
 	if os.Getenv("CRLGEN_ALLOW_LOCAL") == "1" {
 		log.Printf("crlgen: VAULT_ADDR unset — using an in-memory intermediate (DRY-RUN ONLY; do not publish)")
