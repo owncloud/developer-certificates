@@ -16,7 +16,7 @@ OUT=ceremony/out
 RES=resources/codesigning
 
 # Refuse to overwrite existing artifacts (a re-run must be a conscious wipe).
-for f in "$OUT" "$RES/roots/root-g2.crt" "$RES/intermediates/intermediate-g2.crt"; do
+for f in "$OUT" "$RES/roots/root-g2.crt" "$RES/intermediates/intermediate-g2.crt" "$RES/attestations/attestation-g2.crt" "$RES/crl/root.crl" "$RES/crl/intermediate.crl"; do
   if [ -e "$f" ]; then
     echo "ERROR: $f already exists; refusing to overwrite CA material. Remove it deliberately to re-run." >&2
     exit 1
@@ -42,7 +42,7 @@ openssl req -new -key "$OUT/intermediate-g2.key" -sha384 \
   -subj "/C=DE/O=ownCloud GmbH/CN=ownCloud Code Signing Intermediate CA G2" \
   -out "$OUT/intermediate-g2.csr"
 openssl x509 -req -in "$OUT/intermediate-g2.csr" \
-  -CA "$RES/roots/root-g2.crt" -CAkey "$OUT/root-g2.key" -CAcreateserial \
+  -CA "$RES/roots/root-g2.crt" -CAkey "$OUT/root-g2.key" -CAserial "$OUT/root-g2.srl" -CAcreateserial \
   -sha384 -days 1825 \
   -extfile <(printf "%s\n" \
     "basicConstraints=critical,CA:TRUE,pathlen:0" \
@@ -59,7 +59,7 @@ openssl req -new -key "$OUT/attestation-g2.key" -sha384 \
   -subj "/O=ownCloud GmbH/CN=ownCloud Timestamp Attestation" \
   -out "$OUT/attestation-g2.csr"
 openssl x509 -req -in "$OUT/attestation-g2.csr" \
-  -CA "$RES/intermediates/intermediate-g2.crt" -CAkey "$OUT/intermediate-g2.key" -CAcreateserial \
+  -CA "$RES/intermediates/intermediate-g2.crt" -CAkey "$OUT/intermediate-g2.key" -CAserial "$OUT/intermediate-g2.srl" -CAcreateserial \
   -sha384 -days 1095 \
   -extfile <(printf "%s\n" \
     "basicConstraints=critical,CA:FALSE" \
@@ -70,8 +70,8 @@ openssl x509 -req -in "$OUT/attestation-g2.csr" \
   -out "$RES/attestations/attestation-g2.crt"
 
 echo "== Phase 4: Seed CRLs (empty) =="
-go run ./cmd/seedcrl -key "$OUT/root-g2.key" -cert "$RES/roots/root-g2.crt" -out "$RES/crl/root-g2.crl"
-go run ./cmd/seedcrl -key "$OUT/intermediate-g2.key" -cert "$RES/intermediates/intermediate-g2.crt" -out "$RES/crl/intermediate-g2.crl"
+go run ./cmd/seedcrl -key "$OUT/root-g2.key" -cert "$RES/roots/root-g2.crt" -out "$RES/crl/root.crl"
+go run ./cmd/seedcrl -key "$OUT/intermediate-g2.key" -cert "$RES/intermediates/intermediate-g2.crt" -out "$RES/crl/intermediate.crl"
 
 echo
 echo "Ceremony complete. Public artifacts under $RES/ (commit these)."
