@@ -47,7 +47,7 @@ openssl x509 -req -in "$OUT/intermediate-g2.csr" \
   -extfile <(printf "%s\n" \
     "basicConstraints=critical,CA:TRUE,pathlen:0" \
     "keyUsage=critical,keyCertSign,cRLSign" \
-    "extendedKeyUsage=codeSigning" \
+    "extendedKeyUsage=codeSigning,timeStamping" \
     "subjectKeyIdentifier=hash" \
     "authorityKeyIdentifier=keyid:always" \
     "crlDistributionPoints=URI:$CRL_BASE/root.crl") \
@@ -72,6 +72,52 @@ openssl x509 -req -in "$OUT/attestation-g2.csr" \
 echo "== Phase 4: Seed CRLs (empty) =="
 go run ./cmd/seedcrl -key "$OUT/root-g2.key" -cert "$RES/roots/root-g2.crt" -out "$RES/crl/root.crl"
 go run ./cmd/seedcrl -key "$OUT/intermediate-g2.key" -cert "$RES/intermediates/intermediate-g2.crt" -out "$RES/crl/intermediate.crl"
+
+echo "== Phase 5: Verify chains + EKUs (fail-closed) =="
+# openssl verify checks the signature chain and, with -purpose, the EKU. Note
+# that openssl does NOT enforce EKU *nesting* down the chain, so the -purpose
+# checks below are necessary but NOT sufficient — the Go x509.Verify step is the
+# one that catches an attestation EKU (timeStamping) that a codeSigning-only
+# intermediate would strip. Both EKUs must live on the intermediate.
+openssl verify -CAfile "$RES/roots/root-g2.crt" "$RES/intermediates/intermediate-g2.crt"
+openssl verify -purpose codesign \
+  -CAfile "$RES/roots/root-g2.crt" -untrusted "$RES/intermediates/intermediate-g2.crt" \
+  "$RES/attestations/attestation-g2.crt" >/dev/null 2>&1 || true # attestation is not a codesign cert
+openssl verify -purpose timestampsign \
+  -CAfile "$RES/roots/root-g2.crt" -untrusted "$RES/intermediates/intermediate-g2.crt" \
+  "$RES/attestations/attestation-g2.crt"
+
+# Go's chain builder intersects the EKU set down the chain: a timeStamping leaf
+# under a codeSigning-only intermediate is rejected. This is the authoritative
+# check that the attestation cert is usable for its stated purpose.
+GO_VERIFY=$(cat <<'GOEOF'
+package main
+import ("crypto/x509";"encoding/pem";"fmt";"os")
+func load(p string) *x509.Certificate {
+	d, err := os.ReadFile(p); if err != nil { fmt.Fprintln(os.Stderr, err); os.Exit(1) }
+	b, _ := pem.Decode(d)
+	if b == nil { fmt.Fprintf(os.Stderr, "%s: not PEM\n", p); os.Exit(1) }
+	c, err := x509.ParseCertificate(b.Bytes); if err != nil { fmt.Fprintln(os.Stderr, err); os.Exit(1) }
+	return c
+}
+func main() {
+	root, inter, att := load(os.Args[1]), load(os.Args[2]), load(os.Args[3])
+	roots := x509.NewCertPool(); roots.AddCert(root)
+	inters := x509.NewCertPool(); inters.AddCert(inter)
+	if _, err := att.Verify(x509.VerifyOptions{Roots: roots, Intermediates: inters,
+		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageTimeStamping}}); err != nil {
+		fmt.Fprintf(os.Stderr, "attestation cert fails timeStamping chain verification: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Go x509.Verify: attestation cert OK for timeStamping")
+}
+GOEOF
+)
+GO_VERIFY_DIR=$(mktemp -d)
+printf '%s\n' "$GO_VERIFY" > "$GO_VERIFY_DIR/main.go"
+go run "$GO_VERIFY_DIR/main.go" \
+  "$RES/roots/root-g2.crt" "$RES/intermediates/intermediate-g2.crt" "$RES/attestations/attestation-g2.crt"
+rm -rf "$GO_VERIFY_DIR"
 
 echo
 echo "Ceremony complete. Public artifacts under $RES/ (commit these)."

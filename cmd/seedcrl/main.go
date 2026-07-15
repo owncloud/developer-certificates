@@ -8,6 +8,8 @@ package main
 
 import (
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/x509"
 	"encoding/pem"
 	"flag"
@@ -44,12 +46,16 @@ func run(keyPath, certPath, outPath string, now time.Time) error {
 	if err != nil {
 		return err
 	}
+	signer, ok := key.(crypto.Signer)
+	if !ok {
+		return fmt.Errorf("key %q is not a crypto.Signer", keyPath)
+	}
 	tmpl := &x509.RevocationList{
 		Number:     big.NewInt(1),
 		ThisUpdate: now,
 		NextUpdate: now.Add(crlValidity),
 	}
-	der, err := x509.CreateRevocationList(nil, tmpl, cert, key.(crypto.Signer))
+	der, err := x509.CreateRevocationList(nil, tmpl, cert, signer)
 	if err != nil {
 		return fmt.Errorf("create crl: %w", err)
 	}
@@ -68,14 +74,28 @@ func loadKey(path string) (crypto.PrivateKey, error) {
 	if block == nil {
 		return nil, fmt.Errorf("key %q is not PEM", path)
 	}
+	var key crypto.PrivateKey
 	switch block.Type {
 	case "EC PRIVATE KEY":
-		return x509.ParseECPrivateKey(block.Bytes)
+		key, err = x509.ParseECPrivateKey(block.Bytes)
 	case "PRIVATE KEY":
-		return x509.ParsePKCS8PrivateKey(block.Bytes)
+		key, err = x509.ParsePKCS8PrivateKey(block.Bytes)
 	default:
 		return nil, fmt.Errorf("key %q: unexpected PEM block %q", path, block.Type)
 	}
+	if err != nil {
+		return nil, err
+	}
+	// Reject anything other than EC P-384 to stay symmetric with the pem signer
+	// and design §3 (the CA hierarchy is P-384 throughout).
+	ec, ok := key.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("key %q is not an EC private key", path)
+	}
+	if ec.Curve != elliptic.P384() {
+		return nil, fmt.Errorf("key %q must be EC P-384 (design §3)", path)
+	}
+	return ec, nil
 }
 
 func loadCert(path string) (*x509.Certificate, error) {
