@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/appid"
-	"github.com/DeepDiver1975/developer-certificates/internal/cms"
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer"
+	"github.com/owncloud/developer-certificates/internal/appid"
+	"github.com/owncloud/developer-certificates/internal/cms"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/signer"
 )
 
 // Labels are the terminal states this bot sets (enrollment spec §9). `invalid`

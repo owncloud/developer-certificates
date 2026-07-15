@@ -11,3 +11,7 @@ docs/superpowers/
 Thumbs.db
 .idea/
 .vscode/
+
+# CA ceremony private key material — NEVER commit
+ceremony/out/
+*.key

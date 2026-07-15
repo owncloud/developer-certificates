@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ledger"
 )
 
 // maxLedgerRetries bounds the read-modify-write conflict-retry loop (spec §2),

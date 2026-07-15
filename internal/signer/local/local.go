@@ -17,7 +17,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/signer"
+	"github.com/owncloud/developer-certificates/internal/signer"
 )
 
 // intermediateValidity mirrors the design §2.2 intermediate lifetime (5y), so

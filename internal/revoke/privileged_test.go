@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	ghfake "github.com/DeepDiver1975/developer-certificates/internal/ghclient/fake"
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
+	ghfake "github.com/owncloud/developer-certificates/internal/ghclient/fake"
+	"github.com/owncloud/developer-certificates/internal/ledger"
 )
 
 // privHarness seeds a ledger for cert and returns privileged deps + the gh fake.

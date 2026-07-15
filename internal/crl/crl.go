@@ -13,7 +13,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/ledger"
 )
 
 // crlValidity is the leaf-CRL freshness window (spec §3.1): nextUpdate is set a

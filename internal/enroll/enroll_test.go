@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/challenge"
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient/fake"
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer/local"
+	"github.com/owncloud/developer-certificates/internal/challenge"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ghclient/fake"
+	"github.com/owncloud/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/signer/local"
 )
 
 // fixedClock is a deterministic Clock.

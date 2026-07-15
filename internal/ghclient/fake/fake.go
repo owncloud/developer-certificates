@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
 )
 
 // blob is a stored file with its concurrency SHA.

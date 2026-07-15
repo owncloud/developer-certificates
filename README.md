@@ -5,7 +5,7 @@ The **codesigning repo** for the ownCloud Code-Signing PKI.
 This repository is the single home the design calls for (design §6, §13): CSR
 issue intake, the public issuance **ledger**, the **CRL**, and all issuance /
 attestation / revocation **workflows**. It complements the standalone
-[`ocsign`](https://github.com/DeepDiver1975/ocsign) signing CLI, which lives in
+[`ocsign`](https://github.com/owncloud/ocsign) signing CLI, which lives in
 its own repository.
 
 > **Status: dev / staging — private.** The production codesigning repo must be

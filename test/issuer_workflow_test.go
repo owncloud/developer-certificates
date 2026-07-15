@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/enroll"
+	"github.com/owncloud/developer-certificates/internal/enroll"
 )
 
 // workflow is the subset of a GitHub Actions workflow we assert on.

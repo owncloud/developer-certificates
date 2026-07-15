@@ -19,7 +19,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/appid"
+	"github.com/owncloud/developer-certificates/internal/appid"
 )
 
 // CRLDistributionPoint is the developer/leaf CRL URL (design §6, §13). It is

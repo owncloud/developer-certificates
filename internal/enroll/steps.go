@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/certtmpl"
-	"github.com/DeepDiver1975/developer-certificates/internal/challenge"
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
-	"github.com/DeepDiver1975/developer-certificates/internal/signer"
+	"github.com/owncloud/developer-certificates/internal/certtmpl"
+	"github.com/owncloud/developer-certificates/internal/challenge"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/signer"
 )
 
 // priorChallenge recovers a previously-posted nonce and its comment timestamp

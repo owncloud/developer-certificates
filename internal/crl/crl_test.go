@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/ledger"
+	"github.com/owncloud/developer-certificates/internal/ledger"
 )
 
 func ts(t time.Time) ledger.Timestamp { return ledger.Timestamp(t) }

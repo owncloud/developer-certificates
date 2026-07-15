@@ -13,7 +13,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/appid"
+	"github.com/owncloud/developer-certificates/internal/appid"
 )
 
 // Origin identifies the authority that proved control over the namespace.

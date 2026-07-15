@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
 )
 
 // terminal posts an explanatory comment and sets a terminal label (spec §9:

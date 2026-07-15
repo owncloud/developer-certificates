@@ -101,7 +101,7 @@ request is rejected (contact us for genuine disputes).
 
 ## 4. Sign your app
 
-Use the [`ocsign`](https://github.com/DeepDiver1975/ocsign) tool (a single static
+Use the [`ocsign`](https://github.com/owncloud/ocsign) tool (a single static
 binary; see its releases):
 
 ```sh

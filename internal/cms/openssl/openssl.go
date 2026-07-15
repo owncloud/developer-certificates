@@ -15,7 +15,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/DeepDiver1975/developer-certificates/internal/cms"
+	"github.com/owncloud/developer-certificates/internal/cms"
 )
 
 // binary is the openssl executable name; resolved via PATH.
