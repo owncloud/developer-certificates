@@ -35,11 +35,14 @@ const (
 
 // Config wires the REST client.
 type Config struct {
-	Token      string       // GitHub App/bot token
-	BotLogin   string       // the bot identity whose comments are trusted (spec §2)
-	Repo       string       // codesigning repo, "owner/name", hosting issues + ledger
-	APIBase    string       // optional; defaults to https://api.github.com
-	HTTPClient *http.Client // optional
+	Token             string        // GitHub App/bot token
+	BotLogin          string        // the bot identity whose comments are trusted (spec §2)
+	Repo              string        // codesigning repo, "owner/name", hosting issues + ledger
+	APIBase           string        // optional; defaults to https://api.github.com
+	HTTPClient        *http.Client  // optional
+	DefaultBranch     string        // base branch for PRs; default "main"
+	MergePollInterval time.Duration // default 5s
+	MergeTimeout      time.Duration // default 5m
 }
 
 // Client is a stdlib-based ghclient.GitHub implementation.
@@ -63,6 +66,15 @@ func New(cfg Config) (*Client, error) {
 	hc := cfg.HTTPClient
 	if hc == nil {
 		hc = &http.Client{Timeout: 30 * time.Second}
+	}
+	if cfg.DefaultBranch == "" {
+		cfg.DefaultBranch = "main"
+	}
+	if cfg.MergePollInterval == 0 {
+		cfg.MergePollInterval = 5 * time.Second
+	}
+	if cfg.MergeTimeout == 0 {
+		cfg.MergeTimeout = 5 * time.Minute
 	}
 	return &Client{cfg: cfg, client: hc, base: strings.TrimRight(base, "/")}, nil
 }
