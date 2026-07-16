@@ -38,9 +38,12 @@ func TestCRLWorkflowInvariants(t *testing.T) {
 		t.Errorf("crl.yml: expected daily schedule cron %q (spec §3.1)", wantCron)
 	}
 
-	// Minimal permissions: contents:write only (design §10).
-	if wf.Permissions["contents"] != "write" {
-		t.Errorf("crl.yml: permissions[contents] = %q, want write", wf.Permissions["contents"])
+	// Minimal permissions: contents:read only (design §10). The workflow's
+	// default token no longer writes — the CRL is published through an
+	// App-token auto-merged PR (bot-writes-via-PR design) — so the default
+	// token needs only read (for checkout).
+	if wf.Permissions["contents"] != "read" {
+		t.Errorf("crl.yml: permissions[contents] = %q, want read", wf.Permissions["contents"])
 	}
 	for key := range wf.Permissions {
 		if key != "contents" {
