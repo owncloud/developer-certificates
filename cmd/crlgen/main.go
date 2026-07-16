@@ -29,6 +29,7 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -37,6 +38,8 @@ import (
 
 	"github.com/owncloud/developer-certificates/internal/crl"
 	"github.com/owncloud/developer-certificates/internal/crl/store"
+	"github.com/owncloud/developer-certificates/internal/ghclient"
+	"github.com/owncloud/developer-certificates/internal/ghclient/rest"
 	"github.com/owncloud/developer-certificates/internal/signer"
 	"github.com/owncloud/developer-certificates/internal/signer/local"
 	pemsigner "github.com/owncloud/developer-certificates/internal/signer/pem"
@@ -44,8 +47,9 @@ import (
 )
 
 const (
-	ledgerDir = "ledger"
-	crlPath   = "crl/developers.crl"
+	ledgerDir   = "ledger"
+	crlPath     = "crl/developers.crl"
+	crlRepoPath = "crl/developers.crl"
 )
 
 func main() {
@@ -78,13 +82,30 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("sign crl: %w", err)
 	}
 
+	repo := os.Getenv("GITHUB_REPOSITORY")
+	if repo != "" && os.Getenv("GITHUB_TOKEN") != "" {
+		gh, err := rest.New(rest.Config{
+			Token:    os.Getenv("GITHUB_TOKEN"),
+			BotLogin: os.Getenv("ISSUER_BOT_LOGIN"),
+			Repo:     repo,
+		})
+		if err != nil {
+			return err
+		}
+		if err := publishCRL(ctx, gh, repo, der); err != nil {
+			return fmt.Errorf("publish crl: %w", err)
+		}
+		log.Printf("crlgen: proposed and merged %s (%d bytes)", crlRepoPath, len(der))
+		return nil
+	}
+	// Dry-run / local: no repo configured — write to disk, do not publish.
 	if err := os.MkdirAll(filepath.Dir(crlPath), 0o755); err != nil {
 		return fmt.Errorf("create crl dir: %w", err)
 	}
 	if err := os.WriteFile(crlPath, der, 0o644); err != nil {
 		return fmt.Errorf("write %s: %w", crlPath, err)
 	}
-	log.Printf("crlgen: wrote %s (%d bytes)", crlPath, len(der))
+	log.Printf("crlgen: wrote %s (%d bytes) — NOT published (no GITHUB_REPOSITORY/TOKEN)", crlPath, len(der))
 	return nil
 }
 
@@ -137,4 +158,22 @@ func loadCert(path string) (*x509.Certificate, error) {
 		return nil, fmt.Errorf("parse intermediate cert: %w", err)
 	}
 	return cert, nil
+}
+
+// publishCRL proposes crl/developers.crl as an auto-merged PR, basing the change
+// on the current published blob SHA (empty if absent) for concurrency safety.
+func publishCRL(ctx context.Context, gh ghclient.GitHub, repo string, der []byte) error {
+	var prevSHA string
+	if _, sha, err := gh.GetFile(ctx, repo, crlRepoPath); err == nil {
+		prevSHA = sha
+	} else if !errors.Is(err, ghclient.ErrNotFound) {
+		return fmt.Errorf("crlgen: read current CRL: %w", err)
+	}
+	_, err := gh.ProposeChange(ctx, ghclient.ChangeSet{
+		Branch:  "bot/crl",
+		Message: "chore: regenerate crl/developers.crl",
+		Body:    "Automated CRL regeneration from the ledger.",
+		Files:   []ghclient.FileChange{{Path: crlRepoPath, Content: der, PrevSHA: prevSHA}},
+	})
+	return err
 }
