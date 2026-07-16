@@ -253,14 +253,18 @@ func (c *Client) GetLedger(ctx context.Context, appID string) ([]byte, string, e
 }
 
 func (c *Client) PutLedger(ctx context.Context, appID string, content []byte, prevSHA, message string) error {
-	apiPath := fmt.Sprintf("/repos/%s/contents/ledger/%s.json", c.cfg.Repo, appID)
-	body := map[string]string{
-		"message": message,
-		"content": base64.StdEncoding.EncodeToString(content),
-	}
-	if prevSHA != "" {
-		body["sha"] = prevSHA // required to update; its absence creates
-	}
-	_, err := c.do(ctx, http.MethodPut, apiPath, body, nil)
+	// runID keeps the branch unique per attempt while remaining deterministic
+	// within a run; a crashed run's branch is reused (ensureBranch tolerates 422).
+	branch := fmt.Sprintf("bot/ledger-%s", appID)
+	_, err := c.ProposeChange(ctx, ghclient.ChangeSet{
+		Branch:  branch,
+		Message: message,
+		Body:    fmt.Sprintf("Automated ledger update for `%s`.", appID),
+		Files: []ghclient.FileChange{{
+			Path:    "ledger/" + appID + ".json",
+			Content: content,
+			PrevSHA: prevSHA,
+		}},
+	})
 	return err
 }

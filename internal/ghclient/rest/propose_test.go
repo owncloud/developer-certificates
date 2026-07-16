@@ -273,3 +273,56 @@ func TestProposeChangeBranchExistsReuse(t *testing.T) {
 		t.Fatalf("ProposeChange = merged %v, err %v; want true, nil", merged, err)
 	}
 }
+
+// TestPutLedgerProposesChange asserts PutLedger drives a ledger/<appID>.json
+// change through ProposeChange's full merge flow.
+func TestPutLedgerProposesChange(t *testing.T) {
+	var committedPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/git/ref/heads/main"):
+			json.NewEncoder(w).Encode(map[string]any{"object": map[string]string{"sha": "base"}})
+		case strings.HasSuffix(r.URL.Path, "/git/commits/base"):
+			json.NewEncoder(w).Encode(map[string]any{"tree": map[string]string{"sha": "bt"}})
+		case strings.HasSuffix(r.URL.Path, "/git/blobs"):
+			json.NewEncoder(w).Encode(map[string]string{"sha": "b1"})
+		case strings.HasSuffix(r.URL.Path, "/git/trees"):
+			var body struct{ Tree []struct{ Path string `json:"path"` } `json:"tree"` }
+			json.NewDecoder(r.Body).Decode(&body)
+			if len(body.Tree) == 1 {
+				committedPath = body.Tree[0].Path
+			}
+			json.NewEncoder(w).Encode(map[string]string{"sha": "t1"})
+		case strings.HasSuffix(r.URL.Path, "/git/commits"):
+			json.NewEncoder(w).Encode(map[string]string{"sha": "c1"})
+		case strings.HasSuffix(r.URL.Path, "/git/refs"):
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(map[string]any{})
+		case strings.Contains(r.URL.Path, "/git/refs/heads/"):
+			json.NewEncoder(w).Encode(map[string]any{})
+		case strings.HasSuffix(r.URL.Path, "/pulls") && r.Method == http.MethodPost:
+			json.NewEncoder(w).Encode(map[string]any{"number": 1})
+		case strings.Contains(r.URL.Path, "/commits/c1/check-runs"):
+			json.NewEncoder(w).Encode(map[string]any{
+				"total_count": 1,
+				"check_runs":  []map[string]string{{"status": "completed", "conclusion": "success"}},
+			})
+		case strings.HasSuffix(r.URL.Path, "/pulls/1/merge"):
+			json.NewEncoder(w).Encode(map[string]any{"merged": true})
+		case strings.HasSuffix(r.URL.Path, "/pulls/1"):
+			json.NewEncoder(w).Encode(map[string]any{"merged": true})
+		case strings.HasPrefix(r.URL.Path, "/repos/o/r/contents/ledger/"):
+			http.Error(w, "not found", http.StatusNotFound)
+		default:
+			json.NewEncoder(w).Encode(map[string]any{})
+		}
+	}))
+	defer srv.Close()
+	c, _ := New(Config{Token: "t", BotLogin: "b", Repo: "o/r", APIBase: srv.URL, MergePollInterval: time.Millisecond, MergeTimeout: time.Second})
+	if err := c.PutLedger(context.Background(), "app.example", []byte("{}"), "", "ledger: x"); err != nil {
+		t.Fatalf("PutLedger = %v", err)
+	}
+	if committedPath != "ledger/app.example.json" {
+		t.Errorf("committed path = %q, want ledger/app.example.json", committedPath)
+	}
+}

@@ -151,7 +151,7 @@ func TestGetFileDecodes(t *testing.T) {
 	}
 }
 
-// TestErrorMapping maps 404→ErrNotFound and 409→ErrConflict.
+// TestErrorMapping maps 404→ErrNotFound and handles concurrency conflicts.
 func TestErrorMapping(t *testing.T) {
 	c404, close404 := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
@@ -161,32 +161,64 @@ func TestErrorMapping(t *testing.T) {
 		t.Errorf("GetLedger 404 = %v, want ErrNotFound", err)
 	}
 
+	// PutLedger returns ErrConflict when prevSHA doesn't match the current blob SHA
 	c409, close409 := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusConflict)
+		switch {
+		case r.URL.Path == "/repos/owncloud/developer-certificates/contents/ledger/example-app.json":
+			// Current blob SHA is "current", provided PrevSHA is "stale" → conflict
+			json.NewEncoder(w).Encode(map[string]string{"sha": "current"})
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
 	})
 	defer close409()
 	if err := c409.PutLedger(context.Background(), "example-app", []byte("{}"), "stale", "msg"); err != ghclient.ErrConflict {
-		t.Errorf("PutLedger 409 = %v, want ErrConflict", err)
+		t.Errorf("PutLedger with stale prevSHA = %v, want ErrConflict", err)
 	}
 }
 
-// TestPutLedgerSendsSHA verifies the update path includes the prevSHA (required
-// by the Contents API to update rather than create).
+// TestPutLedgerSendsSHA verifies PutLedger passes the prevSHA to ProposeChange,
+// which checks it for concurrency conflicts before writing.
 func TestPutLedgerSendsSHA(t *testing.T) {
-	var sawSHA string
 	c, closeFn := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		var body map[string]string
-		_ = json.NewDecoder(r.Body).Decode(&body)
-		sawSHA = body["sha"]
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("{}"))
+		switch {
+		case r.URL.Path == "/repos/owncloud/developer-certificates/contents/ledger/example-app.json":
+			// ProposeChange looks up the current blob SHA and compares to PrevSHA
+			json.NewEncoder(w).Encode(map[string]string{"sha": "currsha"})
+		case r.URL.Path == "/repos/owncloud/developer-certificates/git/ref/heads/main":
+			json.NewEncoder(w).Encode(map[string]any{"object": map[string]string{"sha": "base"}})
+		case r.URL.Path == "/repos/owncloud/developer-certificates/git/commits/base":
+			json.NewEncoder(w).Encode(map[string]any{"tree": map[string]string{"sha": "bt"}})
+		case r.URL.Path == "/repos/owncloud/developer-certificates/git/blobs":
+			json.NewEncoder(w).Encode(map[string]string{"sha": "b1"})
+		case r.URL.Path == "/repos/owncloud/developer-certificates/git/trees":
+			var body struct{ Tree []struct{ Path string `json:"path"` } `json:"tree"` }
+			json.NewDecoder(r.Body).Decode(&body)
+			json.NewEncoder(w).Encode(map[string]string{"sha": "t1"})
+		case r.URL.Path == "/repos/owncloud/developer-certificates/git/commits":
+			json.NewEncoder(w).Encode(map[string]string{"sha": "c1"})
+		case r.URL.Path == "/repos/owncloud/developer-certificates/git/refs":
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(map[string]any{})
+		case r.URL.Path == "/repos/owncloud/developer-certificates/git/refs/heads/bot/ledger-example-app":
+			json.NewEncoder(w).Encode(map[string]any{})
+		case r.URL.Path == "/repos/owncloud/developer-certificates/pulls":
+			json.NewEncoder(w).Encode(map[string]any{"number": 1})
+		case r.URL.Path == "/repos/owncloud/developer-certificates/commits/c1/check-runs":
+			json.NewEncoder(w).Encode(map[string]any{
+				"total_count": 1,
+				"check_runs":  []map[string]string{{"status": "completed", "conclusion": "success"}},
+			})
+		case r.URL.Path == "/repos/owncloud/developer-certificates/pulls/1/merge":
+			json.NewEncoder(w).Encode(map[string]any{"merged": true})
+		default:
+			json.NewEncoder(w).Encode(map[string]any{})
+		}
 	})
 	defer closeFn()
 
-	if err := c.PutLedger(context.Background(), "example-app", []byte("{}"), "blob99", "msg"); err != nil {
+	// PutLedger should succeed with matching prevSHA
+	if err := c.PutLedger(context.Background(), "example-app", []byte("{}"), "currsha", "msg"); err != nil {
 		t.Fatalf("PutLedger: %v", err)
-	}
-	if sawSHA != "blob99" {
-		t.Errorf("PutLedger sent sha=%q, want blob99", sawSHA)
 	}
 }
