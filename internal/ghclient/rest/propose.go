@@ -2,13 +2,16 @@
 // (bot-writes-via-PR design). Commits are created through the Git Data API so
 // GitHub signs them under the App identity, satisfying main's required_signatures
 // rule. Auto-merge is GraphQL-only; to stay stdlib/REST we instead poll the
-// combined commit status and merge via the REST merge endpoint once it is
-// "success" — preserving the "merge only on green checks" guarantee.
+// commit's check-runs and merge via the REST merge endpoint once they are all
+// green — preserving the "merge only on green checks" guarantee. (The legacy
+// combined-status endpoint is not used: GitHub Actions checks such as
+// validate.yml are check-runs and never appear there.)
 package rest
 
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -18,6 +21,11 @@ import (
 )
 
 func (c *Client) ProposeChange(ctx context.Context, change ghclient.ChangeSet) (bool, error) {
+	// Concurrency guard BEFORE any write: a stale PrevSHA on any file must yield
+	// ErrConflict without creating a branch, blob, or commit (ghclient contract).
+	if err := c.checkPrevSHAs(ctx, change.Files); err != nil {
+		return false, err
+	}
 	baseSHA, baseTree, err := c.baseCommit(ctx)
 	if err != nil {
 		return false, err
@@ -41,6 +49,29 @@ func (c *Client) ProposeChange(ctx context.Context, change ghclient.ChangeSet) (
 		return false, err
 	}
 	return c.waitForMerge(ctx, prNum, commitSHA)
+}
+
+// checkPrevSHAs enforces the optimistic-concurrency contract of FileChange:
+// every file's expected blob SHA (PrevSHA) must match the current state on the
+// base branch, else ErrConflict. It reads the base-branch blob SHA via the
+// Contents API (getContents maps 404→ErrNotFound). Mirrors the fake's
+// checkPrevSHA so both implementations enforce the same rule.
+func (c *Client) checkPrevSHAs(ctx context.Context, files []ghclient.FileChange) error {
+	for _, f := range files {
+		_, curSHA, err := c.getContents(ctx, c.cfg.Repo, f.Path)
+		switch {
+		case errors.Is(err, ghclient.ErrNotFound):
+			if f.PrevSHA != "" {
+				return ghclient.ErrConflict // expected an existing file, none present
+			}
+		case err != nil:
+			return err
+		case curSHA != f.PrevSHA:
+			// present but PrevSHA disagrees (incl. PrevSHA=="" while file exists)
+			return ghclient.ErrConflict
+		}
+	}
+	return nil
 }
 
 func (c *Client) baseCommit(ctx context.Context) (sha, tree string, err error) {
@@ -130,34 +161,72 @@ func (c *Client) openOrGetPR(ctx context.Context, change ghclient.ChangeSet) (in
 	return list[0].Number, nil
 }
 
-// waitForMerge polls the combined status of commitSHA; once "success" it merges
-// the PR, then confirms merged. Blocks until merge, ctx, or MergeTimeout.
+// waitForMerge polls commitSHA's check-runs; once every run has completed
+// successfully it squash-merges the PR. A required GitHub Actions check like
+// validate.yml is a check-run, so the legacy combined-status endpoint (which
+// only reports classic statuses) must not be used here. Blocks until merge,
+// ctx, or MergeTimeout.
 func (c *Client) waitForMerge(ctx context.Context, prNum int, commitSHA string) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.cfg.MergeTimeout)
 	defer cancel()
 	tick := time.NewTicker(c.cfg.MergePollInterval)
 	defer tick.Stop()
 	for {
-		var st struct{ State string `json:"state"` }
+		var cr struct {
+			TotalCount int `json:"total_count"`
+			CheckRuns  []struct {
+				Status     string `json:"status"`
+				Conclusion string `json:"conclusion"`
+			} `json:"check_runs"`
+		}
 		if _, err := c.do(ctx, http.MethodGet,
-			fmt.Sprintf("/repos/%s/commits/%s/status", c.cfg.Repo, commitSHA), nil, &st); err != nil {
+			fmt.Sprintf("/repos/%s/commits/%s/check-runs", c.cfg.Repo, commitSHA), nil, &cr); err != nil {
 			return false, err
 		}
-		switch st.State {
-		case "success":
-			var merged struct{ Merged bool `json:"merged"` }
-			if _, err := c.do(ctx, http.MethodPut,
-				fmt.Sprintf("/repos/%s/pulls/%d/merge", c.cfg.Repo, prNum), map[string]string{"merge_method": "squash"}, &merged); err != nil {
-				return false, err
+		if done, allGreen, failed := evalCheckRuns(cr.TotalCount, cr.CheckRuns); done {
+			if failed != "" {
+				return false, fmt.Errorf("rest: PR #%d checks failed (conclusion=%s); left open for inspection", prNum, failed)
 			}
-			return true, nil
-		case "failure", "error":
-			return false, fmt.Errorf("rest: PR #%d checks failed (state=%s); left open for inspection", prNum, st.State)
+			if allGreen {
+				var merged struct{ Merged bool `json:"merged"` }
+				if _, err := c.do(ctx, http.MethodPut,
+					fmt.Sprintf("/repos/%s/pulls/%d/merge", c.cfg.Repo, prNum), map[string]string{"merge_method": "squash"}, &merged); err != nil {
+					return false, err
+				}
+				return true, nil
+			}
 		}
+		// checks not done yet (or none reported): keep polling
 		select {
 		case <-ctx.Done():
 			return false, fmt.Errorf("rest: PR #%d not merged before timeout: %w", prNum, ctx.Err())
 		case <-tick.C:
 		}
 	}
+}
+
+// evalCheckRuns classifies a check-runs response. done is false while any run is
+// still queued/in_progress or none were reported yet (total==0). When done,
+// failed holds the first blocking conclusion (else ""), and allGreen is true
+// only if every run concluded success/neutral/skipped.
+func evalCheckRuns(total int, runs []struct {
+	Status     string `json:"status"`
+	Conclusion string `json:"conclusion"`
+}) (done, allGreen bool, failed string) {
+	if total == 0 {
+		return false, false, ""
+	}
+	allGreen = true
+	for _, run := range runs {
+		if run.Status != "completed" {
+			return false, false, "" // queued/in_progress: not done yet
+		}
+		switch run.Conclusion {
+		case "success", "neutral", "skipped":
+			// non-blocking success
+		default: // failure, timed_out, cancelled, action_required, ...
+			return true, false, run.Conclusion
+		}
+	}
+	return true, allGreen, ""
 }
