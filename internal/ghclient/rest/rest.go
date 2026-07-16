@@ -253,8 +253,8 @@ func (c *Client) GetLedger(ctx context.Context, appID string) ([]byte, string, e
 }
 
 func (c *Client) PutLedger(ctx context.Context, appID string, content []byte, prevSHA, message string) error {
-	// runID keeps the branch unique per attempt while remaining deterministic
-	// within a run; a crashed run's branch is reused (ensureBranch tolerates 422).
+	// The branch is deterministic per appID and reused across retries and after
+	// a crashed run (ensureBranch tolerates the 422 when it already exists).
 	branch := fmt.Sprintf("bot/ledger-%s", appID)
 	_, err := c.ProposeChange(ctx, ghclient.ChangeSet{
 		Branch:  branch,
