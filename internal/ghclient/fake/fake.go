@@ -7,6 +7,7 @@ package fake
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/owncloud/developer-certificates/internal/ghclient"
 )
@@ -42,6 +43,15 @@ type Client struct {
 	// ghclient.ErrConflict and resets itself. Lets tests exercise the
 	// read-modify-write conflict-retry loop deterministically.
 	FailNextPutWithConflict bool
+
+	// ChecksState controls ProposeChange: "" or "green" merges immediately;
+	// "pending"/"red" never merge (ProposeChange blocks until ctx fires).
+	ChecksState string
+	// ProposedChanges records every ProposeChange call for assertions.
+	ProposedChanges []ghclient.ChangeSet
+
+	// Repo is the repository name for non-ledger file storage.
+	Repo string
 
 	// nextSHA feeds deterministic blob SHAs.
 	nextSHA int
@@ -139,4 +149,59 @@ func (c *Client) PutLedger(_ context.Context, appID string, content []byte, prev
 	}
 	c.Ledgers[appID] = blob{content: content, sha: c.mintSHA()}
 	return nil
+}
+
+// ProposeChange models branch→PR→merge as an atomic apply when checks are
+// green. With "pending"/"red" checks it applies nothing and blocks until ctx
+// is done, mirroring an unmerged PR.
+func (c *Client) ProposeChange(ctx context.Context, change ghclient.ChangeSet) (bool, error) {
+	c.ProposedChanges = append(c.ProposedChanges, change)
+	// Validate every file's prevSHA against current state first (no partial apply).
+	for _, f := range change.Files {
+		if err := c.checkPrevSHA(f); err != nil {
+			return false, err
+		}
+	}
+	if c.ChecksState != "" && c.ChecksState != "green" {
+		<-ctx.Done()
+		return false, fmt.Errorf("fake: PR %q not merged: %w", change.Branch, ctx.Err())
+	}
+	for _, f := range change.Files {
+		c.applyFile(f)
+	}
+	return true, nil
+}
+
+// checkPrevSHA reports ErrConflict if f.PrevSHA disagrees with stored state.
+func (c *Client) checkPrevSHA(f ghclient.FileChange) error {
+	appID, ok := ledgerAppID(f.Path)
+	if !ok {
+		return nil // non-ledger file (e.g. crl): no concurrency guard in the fake
+	}
+	existing, present := c.Ledgers[appID]
+	switch {
+	case !present && f.PrevSHA != "":
+		return ghclient.ErrConflict
+	case present && existing.sha != f.PrevSHA:
+		return ghclient.ErrConflict
+	}
+	return nil
+}
+
+// applyFile writes f into the appropriate store, minting a fresh SHA.
+func (c *Client) applyFile(f ghclient.FileChange) {
+	if appID, ok := ledgerAppID(f.Path); ok {
+		c.Ledgers[appID] = blob{content: f.Content, sha: c.mintSHA()}
+		return
+	}
+	c.Files[fileKey(c.Repo, f.Path)] = blob{content: f.Content, sha: c.mintSHA()}
+}
+
+// ledgerAppID extracts "<appId>" from "ledger/<appId>.json", else ok=false.
+func ledgerAppID(path string) (string, bool) {
+	const pfx, sfx = "ledger/", ".json"
+	if strings.HasPrefix(path, pfx) && strings.HasSuffix(path, sfx) {
+		return path[len(pfx) : len(path)-len(sfx)], true
+	}
+	return "", false
 }

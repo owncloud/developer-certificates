@@ -68,3 +68,54 @@ func TestSideEffectsRecorded(t *testing.T) {
 		t.Error("Closed[7] = false, want true")
 	}
 }
+
+func TestProposeChangeGreenApplies(t *testing.T) {
+	ctx := context.Background()
+	c := New()
+	sha := c.SetLedger("app.example", []byte("v1"))
+
+	merged, err := c.ProposeChange(ctx, ghclient.ChangeSet{
+		Branch:  "bot/ledger-app.example-1",
+		Message: "ledger: update app.example",
+		Files: []ghclient.FileChange{
+			{Path: "ledger/app.example.json", Content: []byte("v2"), PrevSHA: sha},
+		},
+	})
+	if err != nil || !merged {
+		t.Fatalf("ProposeChange green = merged %v, err %v; want merged true, nil", merged, err)
+	}
+	got, _, _ := c.GetLedger(ctx, "app.example")
+	if string(got) != "v2" {
+		t.Errorf("ledger content = %q, want v2", got)
+	}
+	if len(c.ProposedChanges) != 1 || c.ProposedChanges[0].Branch != "bot/ledger-app.example-1" {
+		t.Errorf("ProposedChanges = %+v", c.ProposedChanges)
+	}
+}
+
+func TestProposeChangeStalePrevSHAConflicts(t *testing.T) {
+	ctx := context.Background()
+	c := New()
+	c.SetLedger("app.example", []byte("v1"))
+	_, err := c.ProposeChange(ctx, ghclient.ChangeSet{
+		Branch: "b", Message: "m",
+		Files: []ghclient.FileChange{{Path: "ledger/app.example.json", Content: []byte("v2"), PrevSHA: "stale"}},
+	})
+	if !errors.Is(err, ghclient.ErrConflict) {
+		t.Errorf("ProposeChange stale = %v, want ErrConflict", err)
+	}
+}
+
+func TestProposeChangePendingTimesOut(t *testing.T) {
+	c := New()
+	c.ChecksState = "pending"
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // deadline already passed
+	merged, err := c.ProposeChange(ctx, ghclient.ChangeSet{
+		Branch: "b", Message: "m",
+		Files: []ghclient.FileChange{{Path: "ledger/app.example.json", Content: []byte("v2")}},
+	})
+	if merged || err == nil {
+		t.Errorf("ProposeChange pending+cancelled = merged %v, err %v; want false, non-nil", merged, err)
+	}
+}

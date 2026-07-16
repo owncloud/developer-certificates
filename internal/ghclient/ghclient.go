@@ -44,6 +44,21 @@ type Comment struct {
 	CreatedAt time.Time
 }
 
+// FileChange is a single file modification in a change set.
+type FileChange struct {
+	Path    string // repo-relative, e.g. "ledger/app.example.json"
+	Content []byte
+	PrevSHA string // blob SHA the change is based on ("" = create); mismatch → ErrConflict
+}
+
+// ChangeSet is a set of files to commit on a branch and propose as a PR.
+type ChangeSet struct {
+	Branch  string       // e.g. "bot/ledger-<appId>-<runID>"
+	Message string       // commit message + PR title
+	Body    string       // PR body
+	Files   []FileChange // ≥1 file committed together
+}
+
 // GitHub is the subset of the GitHub API the issuer bot needs.
 type GitHub interface {
 	// ListOpenCertRequests returns the open certificate-request issues to
@@ -81,4 +96,9 @@ type GitHub interface {
 	// GetLedger, or "" to create a new file; a mismatch yields ErrConflict
 	// (spec §2, §4 step 10).
 	PutLedger(ctx context.Context, appID string, content []byte, prevSHA, message string) error
+
+	// ProposeChange commits change.Files on change.Branch, opens a PR, enables
+	// auto-merge, and blocks until the PR merges or ctx fires. A stale PrevSHA on
+	// any file yields ErrConflict so the caller can re-read and retry (spec §2).
+	ProposeChange(ctx context.Context, change ChangeSet) (merged bool, err error)
 }
