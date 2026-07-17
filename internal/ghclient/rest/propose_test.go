@@ -326,3 +326,42 @@ func TestPutLedgerProposesChange(t *testing.T) {
 		t.Errorf("committed path = %q, want ledger/app.example.json", committedPath)
 	}
 }
+
+// TestEvalCheckRuns pins the merge gate's classification, including the
+// incomplete-page guard: a green first page while total_count exceeds the runs
+// returned must read as "not done" (fail closed), never as all-green — this is
+// the sole gate on a 0-approval auto-merge into a protected branch.
+func TestEvalCheckRuns(t *testing.T) {
+	type rn = struct {
+		Status     string `json:"status"`
+		Conclusion string `json:"conclusion"`
+	}
+	run := func(status, conclusion string) rn { return rn{status, conclusion} }
+
+	cases := []struct {
+		name           string
+		total          int
+		runs           []rn
+		done, allGreen bool
+		failed         string
+	}{
+		{"no runs reported yet", 0, nil, false, false, ""},
+		{"single success", 1, []rn{run("completed", "success")}, true, true, ""},
+		{"neutral and skipped are green", 2, []rn{run("completed", "neutral"), run("completed", "skipped")}, true, true, ""},
+		{"in_progress not done", 1, []rn{run("in_progress", "")}, false, false, ""},
+		{"queued not done", 2, []rn{run("completed", "success"), run("queued", "")}, false, false, ""},
+		{"failure blocks", 2, []rn{run("completed", "success"), run("completed", "failure")}, true, false, "failure"},
+		{"timed_out blocks", 1, []rn{run("completed", "timed_out")}, true, false, "timed_out"},
+		// Incomplete page: page 1 all green but total_count says more exist.
+		{"green page, more runs unseen", 2, []rn{run("completed", "success")}, false, false, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			done, allGreen, failed := evalCheckRuns(tc.total, tc.runs)
+			if done != tc.done || allGreen != tc.allGreen || failed != tc.failed {
+				t.Errorf("evalCheckRuns(%d, %d runs) = (done=%v, allGreen=%v, failed=%q), want (%v, %v, %q)",
+					tc.total, len(tc.runs), done, allGreen, failed, tc.done, tc.allGreen, tc.failed)
+			}
+		})
+	}
+}

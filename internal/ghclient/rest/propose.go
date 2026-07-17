@@ -1,11 +1,14 @@
 // Package rest — ProposeChange implements the branch→commit→PR→merge write path
-// (bot-writes-via-PR design). Commits are created through the Git Data API so
-// GitHub signs them under the App identity, satisfying main's required_signatures
-// rule. Auto-merge is GraphQL-only; to stay stdlib/REST we instead poll the
-// commit's check-runs and merge via the REST merge endpoint once they are all
-// green — preserving the "merge only on green checks" guarantee. (The legacy
-// combined-status endpoint is not used: GitHub Actions checks such as
-// validate.yml are check-runs and never appear there.)
+// (bot-writes-via-PR design). The branch commit is created through the Git Data
+// API so GitHub signs it under the App identity. We squash-merge, so the commit
+// that finally lands on main is a NEW commit signed by GitHub's web-flow key,
+// not the App-signed branch commit — main's required_signatures rule accepts the
+// web-flow signature just the same (it is a verified GitHub signature), so the
+// gate is satisfied either way. Auto-merge is GraphQL-only; to stay stdlib/REST
+// we instead poll the commit's check-runs and merge via the REST merge endpoint
+// once they are all green — preserving the "merge only on green checks"
+// guarantee. (The legacy combined-status endpoint is not used: GitHub Actions
+// checks such as validate.yml are check-runs and never appear there.)
 package rest
 
 import (
@@ -180,7 +183,7 @@ func (c *Client) waitForMerge(ctx context.Context, prNum int, commitSHA string) 
 			} `json:"check_runs"`
 		}
 		if _, err := c.do(ctx, http.MethodGet,
-			fmt.Sprintf("/repos/%s/commits/%s/check-runs", c.cfg.Repo, commitSHA), nil, &cr); err != nil {
+			fmt.Sprintf("/repos/%s/commits/%s/check-runs?per_page=100", c.cfg.Repo, commitSHA), nil, &cr); err != nil {
 			return false, err
 		}
 		if done, allGreen, failed := evalCheckRuns(cr.TotalCount, cr.CheckRuns); done {
@@ -192,6 +195,9 @@ func (c *Client) waitForMerge(ctx context.Context, prNum int, commitSHA string) 
 				if _, err := c.do(ctx, http.MethodPut,
 					fmt.Sprintf("/repos/%s/pulls/%d/merge", c.cfg.Repo, prNum), map[string]string{"merge_method": "squash"}, &merged); err != nil {
 					return false, err
+				}
+				if !merged.Merged {
+					return false, fmt.Errorf("rest: PR #%d merge endpoint returned merged=false", prNum)
 				}
 				return true, nil
 			}
@@ -206,14 +212,20 @@ func (c *Client) waitForMerge(ctx context.Context, prNum int, commitSHA string) 
 }
 
 // evalCheckRuns classifies a check-runs response. done is false while any run is
-// still queued/in_progress or none were reported yet (total==0). When done,
-// failed holds the first blocking conclusion (else ""), and allGreen is true
-// only if every run concluded success/neutral/skipped.
+// still queued/in_progress, none were reported yet (total==0), or the page is
+// incomplete (len(runs) < total, i.e. a later page we did not fetch could hold a
+// failure). When done, failed holds the first blocking conclusion (else ""), and
+// allGreen is true only if every run concluded success/neutral/skipped.
+//
+// The incomplete-page guard makes the merge gate fail closed: this is the sole
+// gate on a 0-approval auto-merge into a protected branch, so a green first page
+// must never be read as "all green" while an unseen page could be red. Callers
+// request per_page=100; anything beyond that keeps polling until timeout.
 func evalCheckRuns(total int, runs []struct {
 	Status     string `json:"status"`
 	Conclusion string `json:"conclusion"`
 }) (done, allGreen bool, failed string) {
-	if total == 0 {
+	if total == 0 || len(runs) < total {
 		return false, false, ""
 	}
 	allGreen = true
