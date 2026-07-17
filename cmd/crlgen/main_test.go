@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/owncloud/developer-certificates/internal/ghclient"
 	"github.com/owncloud/developer-certificates/internal/ghclient/fake"
 )
 
@@ -26,5 +25,3 @@ func TestPublishCRLProposesChange(t *testing.T) {
 		t.Errorf("proposed content = %q", got.Files[0].Content)
 	}
 }
-
-var _ ghclient.GitHub = fake.New()

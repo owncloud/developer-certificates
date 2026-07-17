@@ -47,9 +47,8 @@ import (
 )
 
 const (
-	ledgerDir   = "ledger"
-	crlPath     = "crl/developers.crl"
-	crlRepoPath = "crl/developers.crl"
+	ledgerDir = "ledger"
+	crlPath   = "crl/developers.crl" // repo-relative; also the on-disk dry-run path
 )
 
 func main() {
@@ -84,10 +83,11 @@ func run(ctx context.Context) error {
 
 	repo := os.Getenv("GITHUB_REPOSITORY")
 	if repo != "" && os.Getenv("GITHUB_TOKEN") != "" {
+		// No BotLogin: crlgen only writes (GetFile/ProposeChange) and never reads
+		// comments, so it needs no trusted comment identity (rest.New allows it).
 		gh, err := rest.New(rest.Config{
-			Token:    os.Getenv("GITHUB_TOKEN"),
-			BotLogin: os.Getenv("ISSUER_BOT_LOGIN"),
-			Repo:     repo,
+			Token: os.Getenv("GITHUB_TOKEN"),
+			Repo:  repo,
 		})
 		if err != nil {
 			return err
@@ -95,7 +95,7 @@ func run(ctx context.Context) error {
 		if err := publishCRL(ctx, gh, repo, der); err != nil {
 			return fmt.Errorf("publish crl: %w", err)
 		}
-		log.Printf("crlgen: proposed and merged %s (%d bytes)", crlRepoPath, len(der))
+		log.Printf("crlgen: proposed and merged %s (%d bytes)", crlPath, len(der))
 		return nil
 	}
 	// Dry-run / local: no repo configured — write to disk, do not publish.
@@ -162,9 +162,16 @@ func loadCert(path string) (*x509.Certificate, error) {
 
 // publishCRL proposes crl/developers.crl as an auto-merged PR, basing the change
 // on the current published blob SHA (empty if absent) for concurrency safety.
+//
+// Unlike the ledger writers (enroll.commitLedger / revoke.applyRevocation), this
+// has NO PrevSHA conflict-retry loop: a losing PrevSHA yields ErrConflict that
+// fails the whole run. The asymmetry is intentional — only crl.yml writes the
+// CRL and it holds the shared ledger-write concurrency group, so a conflict can
+// only arise across the daily/after-revocation boundary; blast radius is one
+// skipped run, self-healing on the next regeneration.
 func publishCRL(ctx context.Context, gh ghclient.GitHub, repo string, der []byte) error {
 	var prevSHA string
-	if _, sha, err := gh.GetFile(ctx, repo, crlRepoPath); err == nil {
+	if _, sha, err := gh.GetFile(ctx, repo, crlPath); err == nil {
 		prevSHA = sha
 	} else if !errors.Is(err, ghclient.ErrNotFound) {
 		return fmt.Errorf("crlgen: read current CRL: %w", err)
@@ -173,7 +180,7 @@ func publishCRL(ctx context.Context, gh ghclient.GitHub, repo string, der []byte
 		Branch:  "bot/crl",
 		Message: "chore: regenerate crl/developers.crl",
 		Body:    "Automated CRL regeneration from the ledger.",
-		Files:   []ghclient.FileChange{{Path: crlRepoPath, Content: der, PrevSHA: prevSHA}},
+		Files:   []ghclient.FileChange{{Path: crlPath, Content: der, PrevSHA: prevSHA}},
 	})
 	return err
 }

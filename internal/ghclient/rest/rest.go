@@ -54,10 +54,13 @@ type Client struct {
 
 var _ ghclient.GitHub = (*Client)(nil)
 
-// New validates the config and returns a Client.
+// New validates the config and returns a Client. BotLogin is NOT required here:
+// write-only callers (e.g. crlgen, which only uses GetFile/ProposeChange) need
+// no comment identity. OwnComments fails closed when BotLogin is unset, so the
+// "read only the bot's own comments" invariant (spec §2) cannot be bypassed.
 func New(cfg Config) (*Client, error) {
-	if cfg.Token == "" || cfg.BotLogin == "" || cfg.Repo == "" {
-		return nil, fmt.Errorf("rest: Token, BotLogin and Repo are required")
+	if cfg.Token == "" || cfg.Repo == "" {
+		return nil, fmt.Errorf("rest: Token and Repo are required")
 	}
 	base := cfg.APIBase
 	if base == "" {
@@ -173,6 +176,11 @@ func (c *Client) listOpenIssues(ctx context.Context, label string) ([]ghclient.I
 }
 
 func (c *Client) OwnComments(ctx context.Context, issue int) ([]ghclient.Comment, error) {
+	if c.cfg.BotLogin == "" {
+		// Fail closed: without a trusted identity we cannot filter to the bot's
+		// own comments, so we must not return any (spec §2).
+		return nil, fmt.Errorf("rest: BotLogin is required to read own comments")
+	}
 	path := fmt.Sprintf("/repos/%s/issues/%d/comments?per_page=100", c.cfg.Repo, issue)
 	var raw []struct {
 		Body      string    `json:"body"`

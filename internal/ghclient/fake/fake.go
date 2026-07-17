@@ -173,19 +173,29 @@ func (c *Client) ProposeChange(ctx context.Context, change ghclient.ChangeSet) (
 }
 
 // checkPrevSHA reports ErrConflict if f.PrevSHA disagrees with stored state.
+// It enforces the guard on EVERY path — ledger files and non-ledger files (e.g.
+// the CRL) alike — mirroring the real client's checkPrevSHAs so a CRL-conflict
+// regression is catchable in tests.
 func (c *Client) checkPrevSHA(f ghclient.FileChange) error {
-	appID, ok := ledgerAppID(f.Path)
-	if !ok {
-		return nil // non-ledger file (e.g. crl): no concurrency guard in the fake
-	}
-	existing, present := c.Ledgers[appID]
+	sha, present := c.currentSHA(f.Path)
 	switch {
 	case !present && f.PrevSHA != "":
 		return ghclient.ErrConflict
-	case present && existing.sha != f.PrevSHA:
+	case present && sha != f.PrevSHA:
 		return ghclient.ErrConflict
 	}
 	return nil
+}
+
+// currentSHA returns the stored blob SHA for path (ledger or repo file) and
+// whether it exists.
+func (c *Client) currentSHA(path string) (sha string, present bool) {
+	if appID, ok := ledgerAppID(path); ok {
+		b, ok := c.Ledgers[appID]
+		return b.sha, ok
+	}
+	b, ok := c.Files[fileKey(c.Repo, path)]
+	return b.sha, ok
 }
 
 // applyFile writes f into the appropriate store, minting a fresh SHA.

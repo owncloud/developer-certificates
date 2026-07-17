@@ -106,6 +106,34 @@ func TestProposeChangeStalePrevSHAConflicts(t *testing.T) {
 	}
 }
 
+// TestProposeChangeCRLPrevSHAConflicts proves the fake enforces PrevSHA on
+// non-ledger (CRL) paths too, matching the real client — so a CRL-conflict
+// regression is catchable here and not silently waved through.
+func TestProposeChangeCRLPrevSHAConflicts(t *testing.T) {
+	ctx := context.Background()
+	c := New()
+	c.Repo = "o/r"
+	c.SetFile("o/r", "crl/developers.crl", []byte("crl-v1"))
+
+	// Stale PrevSHA on the CRL path must conflict.
+	_, err := c.ProposeChange(ctx, ghclient.ChangeSet{
+		Branch: "bot/crl", Message: "crl",
+		Files: []ghclient.FileChange{{Path: "crl/developers.crl", Content: []byte("crl-v2"), PrevSHA: "stale"}},
+	})
+	if !errors.Is(err, ghclient.ErrConflict) {
+		t.Errorf("ProposeChange CRL stale = %v, want ErrConflict", err)
+	}
+
+	// Current SHA succeeds.
+	_, sha, _ := c.GetFile(ctx, "o/r", "crl/developers.crl")
+	if _, err := c.ProposeChange(ctx, ghclient.ChangeSet{
+		Branch: "bot/crl", Message: "crl",
+		Files: []ghclient.FileChange{{Path: "crl/developers.crl", Content: []byte("crl-v2"), PrevSHA: sha}},
+	}); err != nil {
+		t.Errorf("ProposeChange CRL current SHA = %v, want nil", err)
+	}
+}
+
 func TestProposeChangePendingTimesOut(t *testing.T) {
 	c := New()
 	c.ChecksState = "pending"
