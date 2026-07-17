@@ -33,6 +33,14 @@ crlgen/issuer/revoker merge via the REST merge endpoint only after every
 required check-run (`validate`) reports `conclusion: success`, preserving
 "merge only on green checks".
 
+**Squash signature.** The PR is **squash-merged**, so the App-signed branch
+commit is discarded and `main` receives a new squash commit signed by GitHub's
+**web-flow key**, not the App key. `required_signatures` accepts this (it is a
+verified GitHub signature), so the gate holds — but if a future ruleset ever
+restricts signatures to specific signers, the web-flow key (not the App) must be
+on the allowlist. Switch to a merge-commit strategy in `propose.go` if the
+App-signed commit must be the one on `main`.
+
 ## Re-enable workflows
 `issuer` and `revocation` are `disabled_manually` until this lands:
 `gh workflow enable issuer.yml && gh workflow enable revocation.yml`.
