@@ -241,7 +241,19 @@ func (c *Client) GetLedger(ctx context.Context, appID string) ([]byte, string, e
 }
 
 func (c *Client) PutLedger(ctx context.Context, appID string, content []byte, prevSHA, message string) error {
-	apiPath := fmt.Sprintf("/repos/%s/contents/ledger/%s.json", c.cfg.Repo, appID)
+	return c.putContents(ctx, c.cfg.Repo, "ledger/"+appID+".json", content, prevSHA, message)
+}
+
+func (c *Client) PutFile(ctx context.Context, repo, path string, content []byte, prevSHA, message string) error {
+	return c.putContents(ctx, repo, path, content, prevSHA, message)
+}
+
+// putContents writes path in repo via the Contents API. prevSHA is the current
+// blob SHA (its absence creates the file); a stale SHA yields ErrConflict on the
+// 409 the API returns. The commit is signed under the token's identity (the
+// codesign-bot App in production), satisfying required_signatures on main.
+func (c *Client) putContents(ctx context.Context, repo, path string, content []byte, prevSHA, message string) error {
+	apiPath := fmt.Sprintf("/repos/%s/contents/%s", repo, strings.TrimPrefix(path, "/"))
 	body := map[string]string{
 		"message": message,
 		"content": base64.StdEncoding.EncodeToString(content),
