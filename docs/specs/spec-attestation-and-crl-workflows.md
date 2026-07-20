@@ -131,17 +131,21 @@ Under the single-concurrency ledger lock (enrollment-bot spec §2):
 
 - Commit the generated CRL(s) into the codesigning repo
   (`owncloud/developer-certificates`) and publish via **GitHub Pages** at
-  `https://owncloud.github.io/developer-certificates/crl/` (Option B), served over
-  the Pages CDN. `main` is protected (design §6 write path), so the commit is made
-  by the **codesign-bot App** — the ruleset bypass actor — via the GitHub Contents
-  API (a GitHub-signed commit satisfying `required_signatures`), not a raw `git
-  push`. The leaf CRL is regenerated and republished on **every** run (freshness
-  comes from `thisUpdate`/`nextUpdate`; §3.1), so there is no "publish only on
-  change" step.
+  `https://owncloud.dev/developer-certificates/crl/`, served over the Pages CDN.
+  `main` is protected (design §6 write path), so the commit is made by the
+  **codesign-bot App** — the ruleset bypass actor — via the GitHub Contents API (a
+  GitHub-signed commit satisfying `required_signatures`), not a raw `git push`. The
+  leaf CRL is regenerated and republished on **every** run (freshness comes from
+  `thisUpdate`/`nextUpdate`; §3.1), so there is no "publish only on change" step.
+- **Pages publishes only the CRL, not the repo.** A dedicated deploy workflow
+  (`.github/workflows/pages.yml`) uses the **GitHub Actions** Pages build and stages
+  only `crl/*.crl` into the artifact, so the published site contains nothing but the
+  CRL(s) — no repository source, docs, or ledger is web-exposed.
 - The core verifier fetches from a **constant URL** and does **not** follow
-  redirects (verifier spec §5). Future migration to a custom domain is a code
-  change + independent hosting, **not** a Pages custom domain on this repo (which
-  would 301 the github.io URL and break old clients — design §13).
+  redirects (verifier spec §5). The URL is the `owncloud.dev` host, because the org
+  user-site custom domain 301-redirects the `owncloud.github.io/*` path org-wide
+  (design §13). Future migration to a dedicated domain is a code change + independent
+  hosting.
 - Content-type is irrelevant (our verifier parses by content).
 
 ### 3.4 Seed CRLs

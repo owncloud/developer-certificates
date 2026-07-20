@@ -6,7 +6,7 @@ for the ownCloud Code-Signing PKI (see [`specs/`](specs/) for the full design).
 
 > **Placeholders.** Examples use `example-app`, `example-org`, `example-user`.
 > The codesigning repo is **`owncloud/developer-certificates`**. The CRL is
-> published at `https://owncloud.github.io/developer-certificates/crl/developers.crl`;
+> published at `https://owncloud.dev/developer-certificates/crl/developers.crl`;
 > it is a core-side constant and not something developers interact with directly.
 >
 > **Status: dev / staging.** This repository is private during implementation.

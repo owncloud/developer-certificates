@@ -38,9 +38,12 @@ Under `resources/codesigning/` (design §12):
 
 - `CRL_URL` — the core-side constant CRL fetch URL (design §9, §13). Not read from
   the cert's CRL DP. Value:
-  `https://owncloud.github.io/developer-certificates/crl/developers.crl` (the leaf
-  CRL). The intermediate/root CRLs (`.../crl/intermediate.crl`, `.../crl/root.crl`)
-  are likewise constants if/when the verifier checks chain-cert revocation.
+  `https://owncloud.dev/developer-certificates/crl/developers.crl` (the leaf CRL).
+  It is the `owncloud.dev` host, not `owncloud.github.io`: the org user-site custom
+  domain 301-redirects the `github.io` path org-wide, and the fetcher does not
+  follow redirects (§5, design §13). The intermediate/root CRLs
+  (`.../crl/intermediate.crl`, `.../crl/root.crl`) are likewise constants if/when
+  the verifier checks chain-cert revocation.
 - `LEGACY_SUNSET = 2026-12-31T23:59:59Z` — the hardcoded G1 transition cutoff
   (design §12).
 - `ALG_ALLOWLIST` — permitted `alg` values (see §3).
