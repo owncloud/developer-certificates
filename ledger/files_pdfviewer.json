@@ -1,0 +1,23 @@
+{
+  "appId": "files_pdfviewer",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/files_pdfviewer"
+  },
+  "claimedAt": "2026-07-20T22:04:03Z",
+  "certificates": [
+    {
+      "serial": "0x8b09e6ce15b9fb1add81c72ad0b77a19",
+      "fingerprint": "sha256:bb70830cec0f737044071664d42c235dcf493b38818d69442b4e740a66fc1cd0",
+      "notBefore": "2026-07-20T22:04:03Z",
+      "notAfter": "2028-07-19T22:04:03Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#41",
+      "status": "active"
+    }
+  ]
+}
