@@ -1,0 +1,23 @@
+{
+  "appId": "notifications",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/notifications"
+  },
+  "claimedAt": "2026-07-20T22:03:44Z",
+  "certificates": [
+    {
+      "serial": "0x24684b7b89a382d526d1de3b9973d8a3",
+      "fingerprint": "sha256:28fc3ecdd21ddad633d2dfb2490fbe5efe3ae59b61b025bac770fadd4b6c763d",
+      "notBefore": "2026-07-20T22:03:44Z",
+      "notAfter": "2028-07-19T22:03:44Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#52",
+      "status": "active"
+    }
+  ]
+}
