@@ -34,11 +34,20 @@ jobs:
       # Mint a GitHub App token so the bot writes to protected `main` under the
       # codesign-bot App identity — the ruleset bypass actor (design §6). This
       # also makes the bot post/read its own comments under ISSUER_BOT_LOGIN.
+      #
+      # owner: owncloud scopes the token across the org repos the App is
+      # installed on, not just this one — the issuer must read appinfo/info.xml
+      # and the challenge file on the *target* app repo (enrollment spec §4
+      # steps 4, 7), including private first-party apps. Without this the token
+      # is scoped to developer-certificates alone and every target-repo read
+      # 404s (issue #35). The token's actual reach is bounded by the App's
+      # installed repositories and granted permissions.
       - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: apptoken
         with:
           app-id: ${{ secrets.BOT_APP_ID }}
           private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
       - name: Run issuer
         env:
           GITHUB_TOKEN: ${{ steps.apptoken.outputs.token }}

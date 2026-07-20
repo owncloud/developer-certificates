@@ -90,6 +90,17 @@ func Process(ctx context.Context, d Deps, issue ghclient.Issue) error {
 	infoXML, _, err := d.GH.GetFile(ctx, f.Repo, "appinfo/info.xml")
 	if err != nil {
 		if errors.Is(err, ghclient.ErrNotFound) {
+			// GitHub 404s both a missing file and a repo the bot cannot see;
+			// probe the repo so a private/uninstalled repo gets an actionable
+			// message rather than a misleading "file not found".
+			accessible, aErr := d.GH.RepoAccessible(ctx, f.Repo)
+			if aErr != nil {
+				return fmt.Errorf("enroll: check repo access: %w", aErr)
+			}
+			if !accessible {
+				return terminal(ctx, d, issue, LabelNeedsChanges,
+					fmt.Sprintf("The issuer bot cannot access `%s`. If it is a private repository, install the `owncloud-codesign-bot` GitHub App on it (or grant it access) so the bot can read `appinfo/info.xml` and verify the challenge.", f.Repo))
+			}
 			return terminal(ctx, d, issue, LabelNeedsChanges,
 				fmt.Sprintf("Could not find `appinfo/info.xml` on the default branch of `%s`.", f.Repo))
 		}

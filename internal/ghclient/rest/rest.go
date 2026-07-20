@@ -15,6 +15,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -234,6 +235,20 @@ func (c *Client) getContents(ctx context.Context, repo, path string) ([]byte, st
 
 func (c *Client) GetFile(ctx context.Context, repo, path string) ([]byte, string, error) {
 	return c.getContents(ctx, repo, path)
+}
+
+// RepoAccessible probes GET /repos/{owner}/{repo}: a 2xx means the token can
+// see the repo, a 404 means it cannot (GitHub hides private repos as 404 to
+// avoid leaking their existence). Other errors propagate.
+func (c *Client) RepoAccessible(ctx context.Context, repo string) (bool, error) {
+	apiPath := fmt.Sprintf("/repos/%s", repo)
+	if _, err := c.do(ctx, http.MethodGet, apiPath, nil, nil); err != nil {
+		if errors.Is(err, ghclient.ErrNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func (c *Client) GetLedger(ctx context.Context, appID string) ([]byte, string, error) {

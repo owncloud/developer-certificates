@@ -157,6 +157,30 @@ func TestProcessMissingInfoXML(t *testing.T) {
 	}
 }
 
+func TestProcessRepoInaccessible(t *testing.T) {
+	d, gh := harness(t, time.Now())
+	// The bot's token cannot see the target repo (e.g. a private first-party
+	// app the App is not installed on). GitHub returns 404 for both the
+	// info.xml read and the repo itself, so a plain "file not found" would be
+	// misleading — the repo is inaccessible, not the file absent.
+	gh.MarkRepoInaccessible(testRepo)
+	iss := newIssue(makeCSR(t, testAppID), testRepo) // no info.xml set (unreadable)
+	if err := Process(context.Background(), d, iss); err != nil {
+		t.Fatalf("Process: %v", err)
+	}
+	if !contains(gh.LabelsAdded[42], LabelNeedsChanges) {
+		t.Errorf("labels = %v, want %s", gh.LabelsAdded[42], LabelNeedsChanges)
+	}
+	msg := lastComment(t, gh, 42)
+	if !strings.Contains(msg, "cannot access") {
+		t.Errorf("comment = %q, want it to explain the repo is inaccessible (not file-not-found)", msg)
+	}
+	// A genuine file-not-found message must NOT be used when the repo is unreadable.
+	if strings.Contains(msg, "Could not find `appinfo/info.xml`") {
+		t.Errorf("comment = %q, want the inaccessible-repo message, not file-not-found", msg)
+	}
+}
+
 func TestProcessPostsChallenge(t *testing.T) {
 	d, gh := harness(t, time.Now())
 	gh.SetFile(testRepo, "appinfo/info.xml", []byte(testInfoXML))

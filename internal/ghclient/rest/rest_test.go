@@ -170,6 +170,30 @@ func TestErrorMapping(t *testing.T) {
 	}
 }
 
+// TestRepoAccessible maps GET /repos/{repo} 2xx→true and 404→false (GitHub
+// hides private repos the token cannot see as 404).
+func TestRepoAccessible(t *testing.T) {
+	cOK, closeOK := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/repos/owncloud/files_classifier" {
+			t.Errorf("RepoAccessible path = %q, want /repos/owncloud/files_classifier", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"full_name":"owncloud/files_classifier"}`))
+	})
+	defer closeOK()
+	if ok, err := cOK.RepoAccessible(context.Background(), "owncloud/files_classifier"); err != nil || !ok {
+		t.Errorf("RepoAccessible(accessible) = %v, %v; want true, nil", ok, err)
+	}
+
+	c404, close404 := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
+	defer close404()
+	if ok, err := c404.RepoAccessible(context.Background(), "owncloud/private-app"); err != nil || ok {
+		t.Errorf("RepoAccessible(404) = %v, %v; want false, nil", ok, err)
+	}
+}
+
 // TestPutLedgerSendsSHA verifies the update path includes the prevSHA (required
 // by the Contents API to update rather than create).
 func TestPutLedgerSendsSHA(t *testing.T) {
