@@ -1,0 +1,23 @@
+{
+  "appId": "brute_force_protection",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/brute_force_protection"
+  },
+  "claimedAt": "2026-07-20T22:10:13Z",
+  "certificates": [
+    {
+      "serial": "0x2a27c625dfce5c438681c68d67c473dc",
+      "fingerprint": "sha256:0d8205143771df5f5d2cb7e944e12370218a469acb84e1709a490586d4dcf5a7",
+      "notBefore": "2026-07-20T22:10:13Z",
+      "notAfter": "2028-07-19T22:10:13Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#28",
+      "status": "active"
+    }
+  ]
+}
