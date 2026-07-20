@@ -1,0 +1,23 @@
+{
+  "appId": "customgroups",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/customgroups"
+  },
+  "claimedAt": "2026-07-20T22:25:24Z",
+  "certificates": [
+    {
+      "serial": "0x21ed972146345f4e957586a4a9e63efc",
+      "fingerprint": "sha256:e8a3d51fcc5c2c80bbf55fa5c03bac044e05c151411ad86bc13fe703a91821ef",
+      "notBefore": "2026-07-20T22:25:24Z",
+      "notAfter": "2028-07-19T22:25:24Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#29",
+      "status": "active"
+    }
+  ]
+}
