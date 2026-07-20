@@ -1,0 +1,23 @@
+{
+  "appId": "configreport",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/configreport"
+  },
+  "claimedAt": "2026-07-20T19:23:19Z",
+  "certificates": [
+    {
+      "serial": "0x6067db2cfc1328b83e22d5ff5df0c2b",
+      "fingerprint": "sha256:79e06535693972084a8aa17cf8d7df9493b2622dee50db717c1a9f8b4be89837",
+      "notBefore": "2026-07-20T19:23:19Z",
+      "notAfter": "2028-07-19T19:23:19Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#22",
+      "status": "active"
+    }
+  ]
+}
