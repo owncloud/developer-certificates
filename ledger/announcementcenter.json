@@ -1,0 +1,23 @@
+{
+  "appId": "announcementcenter",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/announcementcenter"
+  },
+  "claimedAt": "2026-07-20T22:04:54Z",
+  "certificates": [
+    {
+      "serial": "0xe4f7286794cc3edc765972a7ab0d1eb6",
+      "fingerprint": "sha256:61c8620f41368f971b43c75b3981bfdec75dc9d9162c5de447092f4bbd5a52c5",
+      "notBefore": "2026-07-20T22:04:54Z",
+      "notAfter": "2028-07-19T22:04:54Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#27",
+      "status": "active"
+    }
+  ]
+}
