@@ -46,9 +46,10 @@ func TestPrivilegedRevocationWorkflowInvariants(t *testing.T) {
 		t.Error("cancel-in-progress must be false (§2)")
 	}
 
-	// Minimal permissions: contents:write only (design §10).
-	if top.Permissions["contents"] != "write" {
-		t.Errorf("permissions[contents] = %q, want write", top.Permissions["contents"])
+	// Minimal permissions (design §10): the default GITHUB_TOKEN is used only by
+	// actions/checkout, so it is read-only. The ledger write goes through the App token.
+	if top.Permissions["contents"] != "read" {
+		t.Errorf("permissions[contents] = %q, want read", top.Permissions["contents"])
 	}
 	for key := range top.Permissions {
 		if key != "contents" {

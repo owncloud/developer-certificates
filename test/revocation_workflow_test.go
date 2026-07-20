@@ -40,13 +40,15 @@ func TestRevocationWorkflowInvariants(t *testing.T) {
 		t.Errorf("revocation.yml: expected schedule cron %q (spec §11)", wantCron)
 	}
 
-	for key, want := range map[string]string{"issues": "write", "contents": "write"} {
+	// Minimal permissions (design §10): the default GITHUB_TOKEN is used only by
+	// actions/checkout, so it is read-only. All writes go through the App token.
+	for key, want := range map[string]string{"contents": "read"} {
 		if wf.Permissions[key] != want {
 			t.Errorf("revocation.yml: permissions[%q] = %q, want %q", key, wf.Permissions[key], want)
 		}
 	}
 	for key := range wf.Permissions {
-		if key != "issues" && key != "contents" {
+		if key != "contents" {
 			t.Errorf("revocation.yml: unexpected permission %q (keep minimal, design §10)", key)
 		}
 	}

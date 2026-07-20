@@ -125,35 +125,38 @@ func (c *Client) GetLedger(_ context.Context, appID string) ([]byte, string, err
 	return b.content, b.sha, nil
 }
 
-func (c *Client) PutLedger(_ context.Context, appID string, content []byte, prevSHA, _ string) error {
+// checkPrevSHA models the Contents API's optimistic-concurrency rule: creating
+// requires no prevSHA, updating requires prevSHA to match the current blob. It
+// also consumes the one-shot FailNextPutWithConflict knob so tests can force a
+// conflict. Shared by PutLedger and PutFile.
+func (c *Client) checkPrevSHA(existing blob, ok bool, prevSHA string) error {
 	if c.FailNextPutWithConflict {
 		c.FailNextPutWithConflict = false
 		return ghclient.ErrConflict
 	}
-	existing, ok := c.Ledgers[appID]
 	switch {
 	case !ok && prevSHA != "":
 		return ghclient.ErrConflict // expected an existing file, none present
 	case ok && existing.sha != prevSHA:
 		return ghclient.ErrConflict // stale write
+	}
+	return nil
+}
+
+func (c *Client) PutLedger(_ context.Context, appID string, content []byte, prevSHA, _ string) error {
+	existing, ok := c.Ledgers[appID]
+	if err := c.checkPrevSHA(existing, ok, prevSHA); err != nil {
+		return err
 	}
 	c.Ledgers[appID] = blob{content: content, sha: c.mintSHA()}
 	return nil
 }
 
 func (c *Client) PutFile(_ context.Context, repo, path string, content []byte, prevSHA, _ string) error {
-	if c.FailNextPutWithConflict {
-		c.FailNextPutWithConflict = false
-		return ghclient.ErrConflict
+	existing, ok := c.Files[fileKey(repo, path)]
+	if err := c.checkPrevSHA(existing, ok, prevSHA); err != nil {
+		return err
 	}
-	key := fileKey(repo, path)
-	existing, ok := c.Files[key]
-	switch {
-	case !ok && prevSHA != "":
-		return ghclient.ErrConflict // expected an existing file, none present
-	case ok && existing.sha != prevSHA:
-		return ghclient.ErrConflict // stale write
-	}
-	c.Files[key] = blob{content: content, sha: c.mintSHA()}
+	c.Files[fileKey(repo, path)] = blob{content: content, sha: c.mintSHA()}
 	return nil
 }

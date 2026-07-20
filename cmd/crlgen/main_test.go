@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/owncloud/developer-certificates/internal/ghclient/fake"
@@ -84,5 +86,43 @@ func TestPublishCRLPropagatesConflict(t *testing.T) {
 
 	if err := publishCRL(context.Background(), gh, testRepo, []byte("der-v2")); err == nil {
 		t.Fatal("publishCRL: got nil error on PutFile conflict, want it propagated")
+	}
+}
+
+// TestRunDiskFallbackWithoutToken verifies the dry-run branch of run(): with no
+// GITHUB_TOKEN/GITHUB_REPOSITORY the signed CRL is written to crlPath on disk and
+// nothing is published. Runs in an isolated temp dir (t.Chdir) so it never touches
+// the committed crl/developers.crl. Uses the local in-memory signer (dry-run only).
+func TestRunDiskFallbackWithoutToken(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+
+	// A minimal ledger dir so store.LoadAll succeeds (empty active set → empty CRL).
+	if err := os.MkdirAll(ledgerDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	ledgerJSON := `{"appId":"core","owner":{"origin":"owncloud","repo":"owncloud/core"},"claimedAt":"2026-07-06T00:00:00Z","reserved":true,"certificates":[]}`
+	if err := os.WriteFile(filepath.Join(ledgerDir, "core.json"), []byte(ledgerJSON), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// No GITHUB_TOKEN/GITHUB_REPOSITORY → disk fallback; CRLGEN_ALLOW_LOCAL enables
+	// the throwaway in-memory signer. t.Setenv restores the environment afterwards.
+	t.Setenv("GITHUB_TOKEN", "")
+	t.Setenv("GITHUB_REPOSITORY", "")
+	t.Setenv("VAULT_ADDR", "")
+	t.Setenv("INTERMEDIATE_KEY_PEM", "")
+	t.Setenv("CRLGEN_ALLOW_LOCAL", "1")
+
+	if err := run(context.Background()); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	got, err := os.ReadFile(crlPath)
+	if err != nil {
+		t.Fatalf("expected %s written locally: %v", crlPath, err)
+	}
+	if len(got) == 0 {
+		t.Errorf("%s is empty; want signed CRL DER bytes", crlPath)
 	}
 }

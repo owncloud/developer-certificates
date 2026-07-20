@@ -16,11 +16,12 @@ concurrency:
   group: ledger-write
   cancel-in-progress: false
 
-# Minimal permissions (design §10): read/write issues, comments and labels, and
-# write the ledger via repo contents. No Vault, no broad org scopes.
+# Minimal permissions (design §10): the workflow's default GITHUB_TOKEN is used
+# ONLY by actions/checkout, so it needs read-only contents. All issue, comment,
+# label and ledger writes go through the minted codesign-bot App token (passed as
+# GITHUB_TOKEN env to the binary), which is the protected-main bypass actor (§6).
 permissions:
-  issues: write
-  contents: write
+  contents: read
 
 jobs:
   revoke:
