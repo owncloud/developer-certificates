@@ -202,6 +202,14 @@ Pre-seed `ledger/` with entries reserving **all first-party appIds** and the
 §4 step 8 rejects any third-party attempt to claim them. These entries are created
 during the CA ceremony, before the first release.
 
+A reservation may be deliberately downgraded to a normal owner-bound claim so
+its rightful repo can enrol it through the standard flow: drop `reserved` and
+point `owner.repo` at the app's repository. The FCFS check then yields
+`DecisionAllowed` only for that repo and `DecisionRejectedMismatch` for anyone
+else — claimable, but with no land-grab window. `activity` is such an entry,
+assigned to `owncloud/activity`; `core` and the remaining first-party appIds
+stay hard reservations.
+
 ---
 
 ## 8. Manual override (disputes; design §6)
