@@ -1,0 +1,23 @@
+{
+  "appId": "firstrunwizard",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/firstrunwizard"
+  },
+  "claimedAt": "2026-07-20T22:10:05Z",
+  "certificates": [
+    {
+      "serial": "0xf2885a4b0affda800c3588ce0986f2ae",
+      "fingerprint": "sha256:57056171af299f78329ddb8cadf41d9bcade5ca980bf0cbbe8e811605c38cb06",
+      "notBefore": "2026-07-20T22:10:05Z",
+      "notAfter": "2028-07-19T22:10:05Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#45",
+      "status": "active"
+    }
+  ]
+}
