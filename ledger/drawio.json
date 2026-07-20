@@ -1,0 +1,23 @@
+{
+  "appId": "drawio",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/drawio"
+  },
+  "claimedAt": "2026-07-20T22:04:43Z",
+  "certificates": [
+    {
+      "serial": "0xd5664c351bf023a4831dd62c859fe7f8",
+      "fingerprint": "sha256:d990e680bc6a823615d4ef04213b5abb275ea8cd4cad562f30150522b400222f",
+      "notBefore": "2026-07-20T22:04:43Z",
+      "notAfter": "2028-07-19T22:04:43Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#31",
+      "status": "active"
+    }
+  ]
+}
