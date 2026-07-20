@@ -1,0 +1,23 @@
+{
+  "appId": "files_external_ftp",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/files_external_ftp"
+  },
+  "claimedAt": "2026-07-20T22:04:16Z",
+  "certificates": [
+    {
+      "serial": "0x46028a022a91ff35682d879675dc996d",
+      "fingerprint": "sha256:ab1e7e947e2813af0e3f3a211b05309ffffa31a2c08c1841fa5bcffbc2a36be4",
+      "notBefore": "2026-07-20T22:04:16Z",
+      "notAfter": "2028-07-19T22:04:16Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#37",
+      "status": "active"
+    }
+  ]
+}
