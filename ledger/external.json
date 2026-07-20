@@ -1,0 +1,23 @@
+{
+  "appId": "external",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/external"
+  },
+  "claimedAt": "2026-07-20T22:04:33Z",
+  "certificates": [
+    {
+      "serial": "0x31774d36948909d374a6fb566a88ef19",
+      "fingerprint": "sha256:099d72de37fbd6878f6a0f517ddfa029a26e90d50487d14b4e5aaff0b13394f0",
+      "notBefore": "2026-07-20T22:04:33Z",
+      "notAfter": "2028-07-19T22:04:33Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#33",
+      "status": "active"
+    }
+  ]
+}
