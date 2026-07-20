@@ -28,9 +28,9 @@ func TestPublishCRLCreatesWhenAbsent(t *testing.T) {
 	}
 }
 
-// TestPublishCRLUpdatesWhenChanged verifies a changed CRL is written with the
-// current blob SHA (optimistic-concurrency update path).
-func TestPublishCRLUpdatesWhenChanged(t *testing.T) {
+// TestPublishCRLUpdatesExisting verifies an existing CRL is overwritten using
+// the current blob SHA (optimistic-concurrency update path).
+func TestPublishCRLUpdatesExisting(t *testing.T) {
 	gh := fake.New()
 	gh.SetFile(testRepo, crlPath, []byte("der-v1"))
 
@@ -47,16 +47,42 @@ func TestPublishCRLUpdatesWhenChanged(t *testing.T) {
 	}
 }
 
-// TestPublishCRLSkipsWhenUnchanged verifies an identical CRL is not written, so
-// no spurious commit lands on main.
-func TestPublishCRLSkipsWhenUnchanged(t *testing.T) {
+// TestPublishCRLRepublishesUnconditionally verifies the CRL is written even when
+// the bytes are identical to what is already published. The production CRL is
+// non-deterministic per run (fresh thisUpdate/nextUpdate/Number + ECDSA), so
+// there is deliberately no "skip when unchanged" branch — daily regeneration
+// keeps nextUpdate fresh (spec §3.1). A hypothetical byte-identical input must
+// still result in a write (proven here by the SHA advancing).
+func TestPublishCRLRepublishesUnconditionally(t *testing.T) {
 	gh := fake.New()
 	gh.SetFile(testRepo, crlPath, []byte("der-v1"))
-	// A write would mint a new SHA; a conflicting write would error. Force the
-	// next Put to fail so any unexpected write is caught.
-	gh.FailNextPutWithConflict = true
+	_, before, err := gh.GetFile(context.Background(), testRepo, crlPath)
+	if err != nil {
+		t.Fatalf("GetFile before publish: %v", err)
+	}
 
 	if err := publishCRL(context.Background(), gh, testRepo, []byte("der-v1")); err != nil {
-		t.Fatalf("publishCRL (unchanged) = %v, want nil (no write)", err)
+		t.Fatalf("publishCRL: %v", err)
+	}
+
+	_, after, err := gh.GetFile(context.Background(), testRepo, crlPath)
+	if err != nil {
+		t.Fatalf("GetFile after publish: %v", err)
+	}
+	if after == before {
+		t.Errorf("blob SHA unchanged (%q) — publish was skipped, want a fresh write", after)
+	}
+}
+
+// TestPublishCRLPropagatesConflict verifies that a lost race (PutFile returns
+// ErrConflict because another writer landed first) surfaces as an error rather
+// than being swallowed — the run fails and self-heals on the next regeneration.
+func TestPublishCRLPropagatesConflict(t *testing.T) {
+	gh := fake.New()
+	gh.SetFile(testRepo, crlPath, []byte("der-v1"))
+	gh.FailNextPutWithConflict = true
+
+	if err := publishCRL(context.Background(), gh, testRepo, []byte("der-v2")); err == nil {
+		t.Fatal("publishCRL: got nil error on PutFile conflict, want it propagated")
 	}
 }

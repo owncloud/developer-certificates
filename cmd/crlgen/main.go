@@ -9,8 +9,9 @@
 // `main` is protected — it forbids direct pushes (design §6, §13) — so when a
 // GitHub App token is present, crlgen publishes crl/developers.crl via the
 // Contents API (a GitHub-signed commit under the codesign-bot App, the ruleset
-// bypass actor) instead of a raw git push. It writes only when the CRL changed.
-// Without a token it just writes the file locally (dry-run).
+// bypass actor) instead of a raw git push. The CRL is regenerated fresh each run
+// (freshness comes from thisUpdate/nextUpdate, spec §3.1) so it is republished
+// unconditionally. Without a token it just writes the file locally (dry-run).
 //
 // Runs under the shared single-concurrency ledger lock (enrollment spec §2), so
 // it assumes it is the only ledger reader/CRL writer while it runs. It has no
@@ -36,7 +37,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/x509"
@@ -93,19 +93,18 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("sign crl: %w", err)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(crlPath), 0o755); err != nil {
-		return fmt.Errorf("create crl dir: %w", err)
-	}
-	if err := os.WriteFile(crlPath, der, 0o644); err != nil {
-		return fmt.Errorf("write %s: %w", crlPath, err)
-	}
-	log.Printf("crlgen: wrote %s (%d bytes)", crlPath, len(der))
-
 	// Publish to the protected repo via the Contents API when a bot token is
-	// configured; otherwise the local write above is all a dry-run needs.
+	// configured. Without one, this is a dry-run: write the DER locally so it can
+	// be inspected, but touch no remote.
 	token, repo := os.Getenv("GITHUB_TOKEN"), os.Getenv("GITHUB_REPOSITORY")
 	if token == "" || repo == "" {
-		log.Printf("crlgen: GITHUB_TOKEN/GITHUB_REPOSITORY unset — wrote CRL locally only (no publish)")
+		if err := os.MkdirAll(filepath.Dir(crlPath), 0o755); err != nil {
+			return fmt.Errorf("create crl dir: %w", err)
+		}
+		if err := os.WriteFile(crlPath, der, 0o644); err != nil {
+			return fmt.Errorf("write %s: %w", crlPath, err)
+		}
+		log.Printf("crlgen: GITHUB_TOKEN/GITHUB_REPOSITORY unset — wrote %s locally only (%d bytes, no publish)", crlPath, len(der))
 		return nil
 	}
 	gh, err := rest.New(rest.Config{
@@ -125,20 +124,22 @@ type crlPublisher interface {
 	PutFile(ctx context.Context, repo, path string, content []byte, prevSHA, message string) error
 }
 
-// publishCRL writes der to crlPath in repo via the Contents API, but only when
-// it differs from the current published CRL. The commit is signed under the
-// token's App identity, satisfying required_signatures on protected main
-// (design §6, §13). A missing remote file is treated as "create".
+// publishCRL writes der to crlPath in repo via the Contents API. The commit is
+// signed under the token's App identity, satisfying required_signatures on
+// protected main (design §6, §13). The CRL is regenerated fresh every run
+// (thisUpdate/nextUpdate/Number derive from now, and ECDSA signatures are
+// non-deterministic), so it is republished unconditionally — daily regeneration
+// keeping nextUpdate fresh is by design (attestation-CRL spec §3.1). GetFile
+// only supplies the current blob SHA the Contents API needs to update in place;
+// a missing remote file is treated as "create". No conflict-retry loop: a lost
+// race (ErrConflict) fails the run and self-heals on the next regeneration.
 func publishCRL(ctx context.Context, gh crlPublisher, repo string, der []byte) error {
-	current, sha, err := gh.GetFile(ctx, repo, crlPath)
+	_, sha, err := gh.GetFile(ctx, repo, crlPath)
 	switch {
 	case errors.Is(err, ghclient.ErrNotFound):
 		sha = "" // first publish — create
 	case err != nil:
 		return fmt.Errorf("crlgen: read published CRL: %w", err)
-	case bytes.Equal(current, der):
-		log.Printf("crlgen: %s unchanged; nothing to publish", crlPath)
-		return nil
 	}
 	if err := gh.PutFile(ctx, repo, crlPath, der, sha, "chore: regenerate crl/developers.crl"); err != nil {
 		return fmt.Errorf("crlgen: publish %s: %w", crlPath, err)

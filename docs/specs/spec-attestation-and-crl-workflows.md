@@ -132,7 +132,12 @@ Under the single-concurrency ledger lock (enrollment-bot spec §2):
 - Commit the generated CRL(s) into the codesigning repo
   (`owncloud/developer-certificates`) and publish via **GitHub Pages** at
   `https://owncloud.github.io/developer-certificates/crl/` (Option B), served over
-  the Pages CDN.
+  the Pages CDN. `main` is protected (design §6 write path), so the commit is made
+  by the **codesign-bot App** — the ruleset bypass actor — via the GitHub Contents
+  API (a GitHub-signed commit satisfying `required_signatures`), not a raw `git
+  push`. The leaf CRL is regenerated and republished on **every** run (freshness
+  comes from `thisUpdate`/`nextUpdate`; §3.1), so there is no "publish only on
+  change" step.
 - The core verifier fetches from a **constant URL** and does **not** follow
   redirects (verifier spec §5). Future migration to a custom domain is a code
   change + independent hosting, **not** a Pages custom domain on this repo (which
