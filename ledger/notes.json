@@ -1,0 +1,23 @@
+{
+  "appId": "notes",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/notes"
+  },
+  "claimedAt": "2026-07-20T22:03:50Z",
+  "certificates": [
+    {
+      "serial": "0xdb84b8b1d9832fcca9d8d4b5886f7629",
+      "fingerprint": "sha256:9aa92e91f5537b1a974aa3b96c465e7dc5ce911475479ff3db7ffe387d147592",
+      "notBefore": "2026-07-20T22:03:50Z",
+      "notAfter": "2028-07-19T22:03:50Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#51",
+      "status": "active"
+    }
+  ]
+}
