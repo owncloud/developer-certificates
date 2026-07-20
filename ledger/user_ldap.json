@@ -1,0 +1,23 @@
+{
+  "appId": "user_ldap",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/user_ldap"
+  },
+  "claimedAt": "2026-07-20T22:09:42Z",
+  "certificates": [
+    {
+      "serial": "0xca77a00510f759525633c629f1a87051",
+      "fingerprint": "sha256:aad7f8acd464239246ad89c189328b4f470b41dfb965208e3e792a3e4f31ee33",
+      "notBefore": "2026-07-20T22:09:42Z",
+      "notAfter": "2028-07-19T22:09:42Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#63",
+      "status": "active"
+    }
+  ]
+}
