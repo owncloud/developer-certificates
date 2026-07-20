@@ -11,9 +11,9 @@ import (
 // deploy workflow (design §13). The overriding invariant: the Pages site must
 // expose ONLY the CRL, never the repository source tree. The workflow therefore
 // uses the GitHub Actions Pages build (which serves exactly the uploaded
-// artifact) and stages only crl/*.crl — NOT a "deploy from a branch" of the whole
-// repo. It also needs pages:write + id-token:write to deploy, and SHA-pinned
-// actions per the repo checklist.
+// artifact) and stages only the named CRL files — NOT a "deploy from a branch" of
+// the whole repo. It also needs pages:write + id-token:write to deploy, and
+// SHA-pinned actions per the repo checklist.
 func TestPagesWorkflowInvariants(t *testing.T) {
 	raw := mustRead(t, repoPath(".github", "workflows", "pages.yml"))
 	body := string(raw)
@@ -40,11 +40,16 @@ func TestPagesWorkflowInvariants(t *testing.T) {
 		}
 	}
 
-	// The site must contain ONLY the CRL. The staging step copies crl/*.crl and
-	// nothing else; assert that copy is present and that no whole-repo publish
-	// (deploy-from-branch or a broad copy) has crept in.
-	if !strings.Contains(body, "cp crl/*.crl") {
-		t.Error("pages.yml: expected the artifact to stage only 'cp crl/*.crl' — the site must expose only the CRL, not the repo")
+	// The site must contain ONLY the CRLs. The staging step copies the dynamic leaf
+	// CRL and the static intermediate/root CRLs explicitly (not a broad tree copy);
+	// assert both copies are present and that no whole-repo publish has crept in.
+	for _, need := range []string{
+		"cp crl/developers.crl",              // dynamic leaf CRL (crlgen)
+		"cp resources/codesigning/crl/*.crl", // static intermediate/root seeds
+	} {
+		if !strings.Contains(body, need) {
+			t.Errorf("pages.yml: expected staging step to contain %q — the site must expose only the CRLs, not the repo", need)
+		}
 	}
 	for _, forbidden := range []string{
 		"cp -r .",   // copying the whole tree
