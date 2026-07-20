@@ -1,0 +1,23 @@
+{
+  "appId": "files_mediaviewer",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/files_mediaviewer"
+  },
+  "claimedAt": "2026-07-20T22:04:08Z",
+  "certificates": [
+    {
+      "serial": "0xa964fb01feaf1b72b0c736d2be904b5",
+      "fingerprint": "sha256:931155b2e5b228943bc48482cce6166290bf64fbf65fda8b82dbc951d0f934e2",
+      "notBefore": "2026-07-20T22:04:08Z",
+      "notAfter": "2028-07-19T22:04:08Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#40",
+      "status": "active"
+    }
+  ]
+}
