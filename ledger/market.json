@@ -1,0 +1,23 @@
+{
+  "appId": "market",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/market"
+  },
+  "claimedAt": "2026-07-20T22:09:58Z",
+  "certificates": [
+    {
+      "serial": "0x6ba439e26e38746cf3d60be1e7411be2",
+      "fingerprint": "sha256:2b86e1693709400e6043bd2c53f972170985b85103348d33b4c29c3f5871c23e",
+      "notBefore": "2026-07-20T22:09:58Z",
+      "notAfter": "2028-07-19T22:09:58Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#49",
+      "status": "active"
+    }
+  ]
+}
