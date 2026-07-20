@@ -1,0 +1,23 @@
+{
+  "appId": "encryption",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/encryption"
+  },
+  "claimedAt": "2026-07-20T22:04:39Z",
+  "certificates": [
+    {
+      "serial": "0x892cbed601bd0aa866e7bf656cbc6369",
+      "fingerprint": "sha256:923ab553e66649cf6a35036c3c4b176ed43e9373221413b138c57cd28a020f12",
+      "notBefore": "2026-07-20T22:04:39Z",
+      "notAfter": "2028-07-19T22:04:39Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#32",
+      "status": "active"
+    }
+  ]
+}
