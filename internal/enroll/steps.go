@@ -120,6 +120,7 @@ func (d Deps) issue(ctx context.Context, issue ghclient.Issue, f form, appID str
 // on a write conflict by re-reading and re-applying (spec §2, §4 step 10).
 func (d Deps) commitLedger(ctx context.Context, appID, repo string, entry ledger.Certificate, existing *ledger.Ledger, prevSHA string) error {
 	now := d.Clock.Now()
+	var lastConflict error
 	for attempt := 0; attempt < maxLedgerRetries; attempt++ {
 		l := existing
 		if l == nil {
@@ -143,11 +144,12 @@ func (d Deps) commitLedger(ctx context.Context, appID, repo string, entry ledger
 		if !errors.Is(err, ghclient.ErrConflict) {
 			return fmt.Errorf("enroll: write ledger: %w", err)
 		}
+		lastConflict = err // may carry GitHub's 409 reason (e.g. a ruleset block)
 		// Conflict: another write landed first. Re-read and re-apply.
 		existing, prevSHA, err = d.loadLedger(ctx, appID)
 		if err != nil {
 			return err
 		}
 	}
-	return fmt.Errorf("enroll: ledger write for %s conflicted after %d retries", appID, maxLedgerRetries)
+	return fmt.Errorf("enroll: ledger write for %s conflicted after %d retries: %w", appID, maxLedgerRetries, lastConflict)
 }

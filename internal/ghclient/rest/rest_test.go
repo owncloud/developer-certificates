@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/owncloud/developer-certificates/internal/ghclient"
@@ -165,8 +167,25 @@ func TestErrorMapping(t *testing.T) {
 		w.WriteHeader(http.StatusConflict)
 	})
 	defer close409()
-	if err := c409.PutLedger(context.Background(), "example-app", []byte("{}"), "stale", "msg"); err != ghclient.ErrConflict {
+	if err := c409.PutLedger(context.Background(), "example-app", []byte("{}"), "stale", "msg"); !errors.Is(err, ghclient.ErrConflict) {
 		t.Errorf("PutLedger 409 = %v, want ErrConflict", err)
+	}
+
+	// A 409 with a body (e.g. a ruleset rejection, not an SHA conflict) must
+	// still satisfy errors.Is(ErrConflict) so the retry loop keeps working,
+	// while surfacing GitHub's reason instead of swallowing it.
+	const reason = "required status check \"validate\" is expected"
+	c409body, close409body := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusConflict)
+		_, _ = w.Write([]byte(reason))
+	})
+	defer close409body()
+	err := c409body.PutLedger(context.Background(), "example-app", []byte("{}"), "", "msg")
+	if !errors.Is(err, ghclient.ErrConflict) {
+		t.Errorf("PutLedger 409-with-body = %v, want errors.Is ErrConflict", err)
+	}
+	if err == nil || !strings.Contains(err.Error(), reason) {
+		t.Errorf("PutLedger 409-with-body = %v, want it to surface %q", err, reason)
 	}
 }
 
