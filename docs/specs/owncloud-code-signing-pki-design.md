@@ -326,6 +326,19 @@ A **public git repository** — the **same repository** used for CSR issue intak
 (issues = intake; files = ledger). Written **only** by the issuance bot,
 append-only by convention. Git history is the immutable transparency/audit log.
 
+**Write path (App bypass actor).** `main` is protected by an org-level ruleset
+(pull requests + `required_signatures`), so the bots do **not** push commits or
+call the Contents API under the default workflow `GITHUB_TOKEN`. Instead, each bot
+workflow mints a **GitHub App token** (`owncloud-codesign-bot`, the sole ruleset
+**bypass actor**) and writes `ledger/<appId>.json` and `crl/developers.crl`
+directly via the GitHub Contents API — a GitHub-signed commit that satisfies
+`required_signatures`, admitted to `main` because the App bypasses the ruleset.
+The single-concurrency serialization below is unchanged. This trades review of
+bot commits for possession of the App key: whoever can trigger these workflows or
+read `BOT_APP_ID`/`BOT_APP_PRIVATE_KEY` can write to `main` unreviewed, and the
+protection of `main` rests on the bypass being scoped to exactly this App (managed
+in `owncloud/admin`).
+
 **Structure:** one JSON file per appId, e.g. `ledger/example-app.json`:
 
 ```json

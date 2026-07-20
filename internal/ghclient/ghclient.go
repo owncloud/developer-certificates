@@ -81,4 +81,10 @@ type GitHub interface {
 	// GetLedger, or "" to create a new file; a mismatch yields ErrConflict
 	// (spec §2, §4 step 10).
 	PutLedger(ctx context.Context, appID string, content []byte, prevSHA, message string) error
+
+	// PutFile writes an arbitrary path in repo ("owner/name") via the same
+	// optimistic-concurrency Contents-API path as PutLedger. prevSHA is the blob
+	// SHA from GetFile, or "" to create; a mismatch yields ErrConflict. Used by
+	// crlgen to publish crl/developers.crl as a signed commit (design §6, §13).
+	PutFile(ctx context.Context, repo, path string, content []byte, prevSHA, message string) error
 }

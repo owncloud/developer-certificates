@@ -30,9 +30,17 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: stable
+      # Mint a GitHub App token so the bot writes to protected `main` under the
+      # codesign-bot App identity — the ruleset bypass actor (design §6). This
+      # also makes the bot post/read its own comments under ISSUER_BOT_LOGIN.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: apptoken
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
       - name: Run issuer
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.apptoken.outputs.token }}
           ISSUER_BOT_LOGIN: ${{ vars.ISSUER_BOT_LOGIN }}
           VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}

@@ -11,7 +11,9 @@ import (
 // workflow: ledger reads/writes serialized under the SAME concurrency group as
 // the issuer/revocation bots and never cancelled (enrollment spec §2), the daily
 // regeneration cadence (attestation-and-crl spec §3.1), and minimal permissions
-// (design §10).
+// (design §10). The CRL is published to protected `main` via a codesign-bot App
+// token (the ruleset bypass actor, design §6), so the workflow's own GITHUB_TOKEN
+// needs only contents:read.
 func TestCRLWorkflowInvariants(t *testing.T) {
 	raw := mustRead(t, repoPath(".github", "workflows", "crl.yml"))
 
@@ -38,9 +40,10 @@ func TestCRLWorkflowInvariants(t *testing.T) {
 		t.Errorf("crl.yml: expected daily schedule cron %q (spec §3.1)", wantCron)
 	}
 
-	// Minimal permissions: contents:write only (design §10).
-	if wf.Permissions["contents"] != "write" {
-		t.Errorf("crl.yml: permissions[contents] = %q, want write", wf.Permissions["contents"])
+	// Minimal permissions: the workflow token only reads (checkout); the CRL is
+	// written via the App token, not this token (design §6, §10).
+	if wf.Permissions["contents"] != "read" {
+		t.Errorf("crl.yml: permissions[contents] = %q, want read", wf.Permissions["contents"])
 	}
 	for key := range wf.Permissions {
 		if key != "contents" {

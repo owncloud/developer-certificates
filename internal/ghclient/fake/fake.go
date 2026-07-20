@@ -140,3 +140,20 @@ func (c *Client) PutLedger(_ context.Context, appID string, content []byte, prev
 	c.Ledgers[appID] = blob{content: content, sha: c.mintSHA()}
 	return nil
 }
+
+func (c *Client) PutFile(_ context.Context, repo, path string, content []byte, prevSHA, _ string) error {
+	if c.FailNextPutWithConflict {
+		c.FailNextPutWithConflict = false
+		return ghclient.ErrConflict
+	}
+	key := fileKey(repo, path)
+	existing, ok := c.Files[key]
+	switch {
+	case !ok && prevSHA != "":
+		return ghclient.ErrConflict // expected an existing file, none present
+	case ok && existing.sha != prevSHA:
+		return ghclient.ErrConflict // stale write
+	}
+	c.Files[key] = blob{content: content, sha: c.mintSHA()}
+	return nil
+}

@@ -37,8 +37,10 @@ signs **through Vault's Transit engine** (key never enters the runner — design
 - **Single concurrency for ledger writes.** All workflows that read-then-write the
   ledger MUST run under a global GitHub Actions `concurrency` group with
   `cancel-in-progress: false`, serializing them (design §6, P2). Additionally,
-  commit to the ledger with conflict-retry (re-read, re-apply, re-push) as a
-  second safeguard.
+  write the ledger with conflict-retry (re-read, re-apply, re-write) as a second
+  safeguard. Because `main` is protected, writes go through the **codesign-bot App
+  token** via the Contents API (design §6 write path — a GitHub-signed commit by
+  the ruleset bypass actor), not a raw `git push`.
 - **Read only the bot's own comments.** Any workflow reading state from an issue
   MUST filter comments to those authored by the bot/App identity. Never parse
   arbitrary user comments (design §5.3).
@@ -46,7 +48,10 @@ signs **through Vault's Transit engine** (key never enters the runner — design
   (`schedule:` cron) and on issue events; it does not act on human comment events.
 - **Minimal permissions** (design §10): read issues/comments, write comments &
   labels, read public repo contents (of target repos), write to the ledger/CRL
-  paths. No broad org scopes.
+  paths. Ledger/CRL writes are performed with the **codesign-bot App token** (the
+  ruleset bypass actor, design §6 write path), so the workflow's own `GITHUB_TOKEN`
+  needs only the scopes for issues/comments/labels and checkout — the CRL workflow,
+  which touches no issues, drops to `contents: read`. No broad org scopes.
 
 ---
 
