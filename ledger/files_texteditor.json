@@ -1,0 +1,23 @@
+{
+  "appId": "files_texteditor",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/files_texteditor"
+  },
+  "claimedAt": "2026-07-20T22:25:14Z",
+  "certificates": [
+    {
+      "serial": "0xdf542fe0accadd8c4e20c0bde6fe8251",
+      "fingerprint": "sha256:bbdfdab86e15d076ebb6af9e03a8f9eb43374c06a1f9aa106887fba472a0da43",
+      "notBefore": "2026-07-20T22:25:14Z",
+      "notAfter": "2028-07-19T22:25:14Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#43",
+      "status": "active"
+    }
+  ]
+}
