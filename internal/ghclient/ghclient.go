@@ -72,6 +72,12 @@ type GitHub interface {
 	// commit the content was read at (spec §4 step 4).
 	GetFile(ctx context.Context, repo, path string) (content []byte, commitSHA string, err error)
 
+	// RepoAccessible reports whether the bot's token can see repo
+	// ("owner/name"). GitHub returns 404 (not 403) for a private repo the token
+	// cannot access, so a missing file and an inaccessible repo are otherwise
+	// indistinguishable; this probe disambiguates them for clear diagnostics.
+	RepoAccessible(ctx context.Context, repo string) (bool, error)
+
 	// GetLedger reads ledger/<appId>.json from the codesigning repo. Returns
 	// ErrNotFound if no ledger file exists yet. sha is the blob SHA for the
 	// optimistic-concurrency guard on PutLedger.

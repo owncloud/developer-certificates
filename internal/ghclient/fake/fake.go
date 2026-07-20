@@ -43,6 +43,10 @@ type Client struct {
 	// read-modify-write conflict-retry loop deterministically.
 	FailNextPutWithConflict bool
 
+	// inaccessibleRepos are repos the bot's token cannot see (set via
+	// MarkRepoInaccessible): RepoAccessible is false and GetFile 404s for them.
+	inaccessibleRepos map[string]bool
+
 	// nextSHA feeds deterministic blob SHAs.
 	nextSHA int
 }
@@ -63,6 +67,16 @@ func New() *Client {
 }
 
 func fileKey(repo, path string) string { return repo + "\x00" + path }
+
+// MarkRepoInaccessible models a repo the bot's token cannot see: RepoAccessible
+// returns false and GetFile returns ErrNotFound for any path under it, mirroring
+// GitHub's 404-for-private-repos behaviour.
+func (c *Client) MarkRepoInaccessible(repo string) {
+	if c.inaccessibleRepos == nil {
+		c.inaccessibleRepos = map[string]bool{}
+	}
+	c.inaccessibleRepos[repo] = true
+}
 
 func (c *Client) mintSHA() string {
 	c.nextSHA++
@@ -110,11 +124,18 @@ func (c *Client) CloseIssue(_ context.Context, issue int) error {
 }
 
 func (c *Client) GetFile(_ context.Context, repo, path string) ([]byte, string, error) {
+	if c.inaccessibleRepos[repo] {
+		return nil, "", ghclient.ErrNotFound // GitHub 404s a repo the token can't see
+	}
 	b, ok := c.Files[fileKey(repo, path)]
 	if !ok {
 		return nil, "", ghclient.ErrNotFound
 	}
 	return b.content, b.sha, nil
+}
+
+func (c *Client) RepoAccessible(_ context.Context, repo string) (bool, error) {
+	return !c.inaccessibleRepos[repo], nil
 }
 
 func (c *Client) GetLedger(_ context.Context, appID string) ([]byte, string, error) {
