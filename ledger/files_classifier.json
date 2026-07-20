@@ -1,0 +1,23 @@
+{
+  "appId": "files_classifier",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/files_classifier"
+  },
+  "claimedAt": "2026-07-20T23:07:08Z",
+  "certificates": [
+    {
+      "serial": "0x2c45e5adbff3db87df11f26f32e9a330",
+      "fingerprint": "sha256:2cb070c95562cabf1e6eb3bcd926b914725eb14495d3c867e7068900d9fce6db",
+      "notBefore": "2026-07-20T23:07:08Z",
+      "notAfter": "2028-07-19T23:07:08Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#35",
+      "status": "active"
+    }
+  ]
+}
