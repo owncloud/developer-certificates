@@ -9,7 +9,7 @@ the codesigning repo.
 
 > **Examples** use placeholders (`example-app`, `example-org`, `example-user`).
 > The codesigning repo is `owncloud/developer-certificates`; the leaf CRL is
-> published at `https://owncloud.github.io/developer-certificates/crl/developers.crl`.
+> published at `https://owncloud.dev/developer-certificates/crl/developers.crl`.
 
 ---
 

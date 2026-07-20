@@ -1,0 +1,54 @@
+name: pages
+
+# Publishes ONLY the leaf CRL to GitHub Pages (design §13 hosting).
+#
+# The ownCloud org user-site (owncloud/owncloud.github.io) uses an org-wide Pages
+# custom domain (owncloud.dev), so every owncloud.github.io/* path 301-redirects
+# to owncloud.dev/*. The core verifier fetches a constant URL and does NOT follow
+# redirects (spec-core-verifier §5), so the CRL must be reachable at
+# https://owncloud.dev/developer-certificates/crl/developers.crl with a 200.
+#
+# This uses the GitHub Actions Pages build (NOT "deploy from a branch"): the
+# published site is EXACTLY the artifact uploaded below. We stage only crl/*.crl,
+# so no repository source, docs, or ledger is ever exposed on the Pages site.
+on:
+  # crlgen commits crl/developers.crl to main under the codesign-bot App identity
+  # (not the workflow GITHUB_TOKEN), so its push DOES trigger this workflow.
+  push:
+    branches: [main]
+    paths: ["crl/**"]
+  workflow_dispatch:
+
+# Allow one concurrent Pages deployment; do not cancel an in-progress deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+# Minimal permissions (design §10): read to checkout, plus the Pages deploy grants.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      # Stage ONLY the CRL directory. This copy is the single guarantee that the
+      # Pages site contains nothing but the CRL(s) — no repo source is published.
+      - name: Stage only the CRL directory
+        run: |
+          mkdir -p _site/crl
+          cp crl/*.crl _site/crl/
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

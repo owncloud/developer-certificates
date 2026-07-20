@@ -23,8 +23,10 @@ import (
 )
 
 // CRLDistributionPoint is the developer/leaf CRL URL (design §6, §13). It is
-// present for external tooling; the core verifier ignores it (design §9).
-const CRLDistributionPoint = "https://owncloud.github.io/developer-certificates/crl/developers.crl"
+// present for external tooling; the core verifier ignores it (design §9). The
+// CRL is served from owncloud.dev (not the owncloud.github.io path, which
+// 301-redirects org-wide to owncloud.dev — design §13).
+const CRLDistributionPoint = "https://owncloud.dev/developer-certificates/crl/developers.crl"
 
 // leafValidity is the leaf lifetime (design §2.3, §7). The actual notAfter is
 // capped so it never exceeds the issuing intermediate's notAfter.
