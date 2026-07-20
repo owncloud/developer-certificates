@@ -1,0 +1,23 @@
+{
+  "appId": "files_external_dropbox",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/files_external_dropbox"
+  },
+  "claimedAt": "2026-07-20T22:04:21Z",
+  "certificates": [
+    {
+      "serial": "0x1dbdffca790653bc56058cb7b590d007",
+      "fingerprint": "sha256:f4b73abb8bf2a2e38e7e782ce0c4dada46f39167bcaa886f004742a32dd30cfe",
+      "notBefore": "2026-07-20T22:04:21Z",
+      "notAfter": "2028-07-19T22:04:21Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#36",
+      "status": "active"
+    }
+  ]
+}
