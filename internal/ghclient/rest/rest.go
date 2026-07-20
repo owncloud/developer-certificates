@@ -102,6 +102,14 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) (in
 	case http.StatusNotFound:
 		return resp.StatusCode, ghclient.ErrNotFound
 	case http.StatusConflict:
+		// A 409 is not always an optimistic-concurrency conflict: a branch
+		// ruleset (e.g. a required status check with no bypass for the bot)
+		// rejects the write with the same status but a different reason. Wrap
+		// the sentinel with GitHub's response so errors.Is still drives the
+		// conflict-retry loop while the real cause is no longer swallowed.
+		if body := strings.TrimSpace(string(data)); body != "" {
+			return resp.StatusCode, fmt.Errorf("%w: %s: %s", ghclient.ErrConflict, resp.Status, body)
+		}
 		return resp.StatusCode, ghclient.ErrConflict
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {

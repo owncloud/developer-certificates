@@ -60,6 +60,7 @@ type findFunc func(*ledger.Ledger) int
 // Shared by the self-service (§5.1) and privileged (§5.2) paths; the caller
 // supplies the finder and the revocation values.
 func (d Deps) applyRevocation(ctx context.Context, appID string, find findFunc, rev revocation, l *ledger.Ledger, prevSHA string) (serial string, err error) {
+	var lastConflict error
 	for attempt := 0; attempt < maxLedgerRetries; attempt++ {
 		idx := find(l)
 		if idx < 0 {
@@ -87,11 +88,12 @@ func (d Deps) applyRevocation(ctx context.Context, appID string, find findFunc, 
 		if !errors.Is(wErr, ghclient.ErrConflict) {
 			return "", fmt.Errorf("revoke: write ledger: %w", wErr)
 		}
+		lastConflict = wErr // may carry GitHub's 409 reason (e.g. a ruleset block)
 		// Conflict: another write landed first. Re-read and re-apply.
 		l, prevSHA, err = d.loadLedger(ctx, appID)
 		if err != nil {
 			return "", err
 		}
 	}
-	return "", fmt.Errorf("revoke: ledger write for %s conflicted after %d retries", appID, maxLedgerRetries)
+	return "", fmt.Errorf("revoke: ledger write for %s conflicted after %d retries: %w", appID, maxLedgerRetries, lastConflict)
 }
