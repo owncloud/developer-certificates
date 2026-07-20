@@ -71,7 +71,8 @@ func TestPagesWorkflowInvariants(t *testing.T) {
 	// Actions must be SHA-pinned (repo checklist).
 	for _, line := range strings.Split(body, "\n") {
 		l := strings.TrimSpace(line)
-		if strings.HasPrefix(l, "- uses:") && !strings.Contains(l, "@") {
+		l = strings.TrimPrefix(l, "- ")
+		if strings.HasPrefix(l, "uses:") && !strings.Contains(l, "@") {
 			t.Errorf("pages.yml: uses without a pinned ref: %q", l)
 		}
 	}
