@@ -1,0 +1,23 @@
+{
+  "appId": "richdocuments",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/richdocuments"
+  },
+  "claimedAt": "2026-07-20T22:03:28Z",
+  "certificates": [
+    {
+      "serial": "0x3116ec650f52fdc0de5f9d432254fe61",
+      "fingerprint": "sha256:29fc9108b4aedbc1529e623e4c2c6cd37367ea0366bc9583e5fd388cca766e98",
+      "notBefore": "2026-07-20T22:03:28Z",
+      "notAfter": "2028-07-19T22:03:28Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#57",
+      "status": "active"
+    }
+  ]
+}
