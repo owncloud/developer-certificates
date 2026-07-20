@@ -1,0 +1,23 @@
+{
+  "appId": "openidconnect",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/openidconnect"
+  },
+  "claimedAt": "2026-07-20T22:03:34Z",
+  "certificates": [
+    {
+      "serial": "0x576c34d4dc7063716de374b4b45e3913",
+      "fingerprint": "sha256:6230532572b3a00d27ea62de9ba563351eabc6efabdf9e78003198af923c5bc0",
+      "notBefore": "2026-07-20T22:03:34Z",
+      "notAfter": "2028-07-19T22:03:34Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#54",
+      "status": "active"
+    }
+  ]
+}
