@@ -1,0 +1,23 @@
+{
+  "appId": "files_primary_s3",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/files_primary_s3"
+  },
+  "claimedAt": "2026-07-20T22:25:18Z",
+  "certificates": [
+    {
+      "serial": "0x785e3a4444baf1b13599aa79456815aa",
+      "fingerprint": "sha256:28ead099bcac0766ef2cf5b71ee84eefb1621f2f12c42b08b52b142e0e5baef4",
+      "notBefore": "2026-07-20T22:25:18Z",
+      "notAfter": "2028-07-19T22:25:18Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#42",
+      "status": "active"
+    }
+  ]
+}
