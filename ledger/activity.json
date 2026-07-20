@@ -5,5 +5,19 @@
     "repo": "owncloud/activity"
   },
   "claimedAt": "2026-07-06T00:00:00Z",
-  "certificates": []
+  "certificates": [
+    {
+      "serial": "0x485dd836e4c02f275515534d9d944c2e",
+      "fingerprint": "sha256:6068cf72971cd8c1ca1f4ad4ba30b0eda36d411178bf561ed2b8e06357578a61",
+      "notBefore": "2026-07-20T23:02:46Z",
+      "notAfter": "2028-07-19T23:02:46Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#25",
+      "status": "active"
+    }
+  ]
 }
