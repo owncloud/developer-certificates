@@ -1,0 +1,23 @@
+{
+  "appId": "oauth2",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/oauth2"
+  },
+  "claimedAt": "2026-07-20T22:03:39Z",
+  "certificates": [
+    {
+      "serial": "0x4ece57c2a0c0b8ea3ad0d0a750621be7",
+      "fingerprint": "sha256:5b49087e86da051b81f95d36aec10461d50cda2255afd73e1a4654dba45b1c09",
+      "notBefore": "2026-07-20T22:03:39Z",
+      "notAfter": "2028-07-19T22:03:39Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#53",
+      "status": "active"
+    }
+  ]
+}
