@@ -1,0 +1,23 @@
+{
+  "appId": "files_antivirus",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/files_antivirus"
+  },
+  "claimedAt": "2026-07-20T22:04:27Z",
+  "certificates": [
+    {
+      "serial": "0xe618ce1ef65d06e32d30625a6a6aac5f",
+      "fingerprint": "sha256:1339f387ba71eb142352191d52306125654c7cd9b6e3efa340a50cfd37e5e6ee",
+      "notBefore": "2026-07-20T22:04:27Z",
+      "notAfter": "2028-07-19T22:04:27Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#34",
+      "status": "active"
+    }
+  ]
+}
