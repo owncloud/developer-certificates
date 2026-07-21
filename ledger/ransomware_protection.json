@@ -1,0 +1,23 @@
+{
+  "appId": "ransomware_protection",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/ransomware_protection"
+  },
+  "claimedAt": "2026-07-21T09:03:17Z",
+  "certificates": [
+    {
+      "serial": "0xcda196e2c2f75dda656b6df270d9f5c5",
+      "fingerprint": "sha256:4555131c20ad3ca06ebc6aaca7634e965100d0e756c835760a9e2dac42786850",
+      "notBefore": "2026-07-21T09:03:17Z",
+      "notAfter": "2028-07-20T09:03:17Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#56",
+      "status": "active"
+    }
+  ]
+}
