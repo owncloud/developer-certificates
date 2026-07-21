@@ -1,0 +1,23 @@
+{
+  "appId": "user_shibboleth",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/user_shibboleth"
+  },
+  "claimedAt": "2026-07-21T08:26:18Z",
+  "certificates": [
+    {
+      "serial": "0x556275e8cdab3d5270a1af7f16cf9713",
+      "fingerprint": "sha256:930f24a4b4f6c14fe6b36a7d2a1eaf4153c2aaeb95b9b79480c18af57ab5f367",
+      "notBefore": "2026-07-21T08:26:18Z",
+      "notAfter": "2028-07-20T08:26:18Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#64",
+      "status": "active"
+    }
+  ]
+}
