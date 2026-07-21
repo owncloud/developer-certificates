@@ -1,0 +1,23 @@
+{
+  "appId": "theme-enterprise",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/theme-enterprise"
+  },
+  "claimedAt": "2026-07-21T08:26:24Z",
+  "certificates": [
+    {
+      "serial": "0xae15a64bf756be117ec6a08c990b1048",
+      "fingerprint": "sha256:a6ce43d95390c6723c08975d426efb3a295a09c073893a334debb8082cfc22b2",
+      "notBefore": "2026-07-21T08:26:24Z",
+      "notAfter": "2028-07-20T08:26:24Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#60",
+      "status": "active"
+    }
+  ]
+}
