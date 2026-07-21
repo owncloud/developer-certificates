@@ -14,9 +14,16 @@ import (
 // first-party *reservations* (reserved=true), and *live* issued-cert ledgers
 // the bot writes as apps enrol (reserved=false, one or more certificates).
 // Every file must be schema-valid with a canonical <appId>.json filename;
-// only the reservations carry the stricter seed invariants (owncloud-owned,
-// no certificates), so the FCFS check (enrollment spec §4 step 8) rejects any
-// third-party attempt to claim them.
+// only the reservations carry the stricter seed invariant (owncloud-owned), so
+// the FCFS check (enrollment spec §4 step 8) rejects any third-party attempt to
+// claim them.
+//
+// A reservation MAY carry certificates: first-party leaves (core + core-bundled
+// apps) are minted through the privileged path, which bypasses the FCFS check
+// entirely, so recording the issued cert in the reservation ledger does not
+// weaken the anti-squatting guard — ledger.Decide still returns
+// DecisionRejectedReserved for any self-service attempt. The reservation's
+// owncloud ownership is the load-bearing invariant, not an empty cert list.
 func TestLedgerSeeds(t *testing.T) {
 	matches, err := filepath.Glob(repoPath("ledger", "*.json"))
 	if err != nil {
@@ -46,17 +53,16 @@ func TestLedgerSeeds(t *testing.T) {
 
 		// Live issued-cert ledgers (reserved=false) are written by the bot and
 		// legitimately carry github-origin owners and certificates; the seed
-		// invariants below apply only to first-party reservations.
+		// invariant below applies only to first-party reservations.
 		if !l.Reserved {
 			continue
 		}
 
-		// Seed invariants: reservations are owncloud-owned and hold no certs.
+		// Seed invariant: reservations are owncloud-owned. They MAY carry
+		// certificates issued via the privileged path (see the doc comment);
+		// the ownership origin is what the FCFS reservation guarantee rests on.
 		if l.Owner.Origin != ledger.OriginOwnCloud {
 			t.Errorf("%s: seed owner.origin must be %q, got %q", base, ledger.OriginOwnCloud, l.Owner.Origin)
-		}
-		if len(l.Certificates) != 0 {
-			t.Errorf("%s: reservation must carry no certificates, got %d", base, len(l.Certificates))
 		}
 		if l.AppID == "core" {
 			sawCore = true

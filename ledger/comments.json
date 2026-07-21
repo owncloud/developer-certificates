@@ -1,5 +1,5 @@
 {
-  "appId": "core",
+  "appId": "comments",
   "owner": {
     "origin": "owncloud",
     "repo": "owncloud/core"
@@ -8,8 +8,8 @@
   "reserved": true,
   "certificates": [
     {
-      "serial": "0x791b5702c65d0797bb1f762cb5313c4e",
-      "fingerprint": "sha256:9be99d27664e03dfcbc657659ffe8972ac77d69d359c4026301dd8d5987ffeb2",
+      "serial": "0xa6e368eceed5b25107ee3a24bba53eaf",
+      "fingerprint": "sha256:307eaa1914ca8542fd8119d15e19d46705bd3f460df1237192625426e20c4a12",
       "notBefore": "2026-07-21T08:29:30Z",
       "notAfter": "2028-07-20T08:29:30Z",
       "requester": {

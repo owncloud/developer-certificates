@@ -6,5 +6,19 @@
   },
   "claimedAt": "2026-07-06T00:00:00Z",
   "reserved": true,
-  "certificates": []
+  "certificates": [
+    {
+      "serial": "0x8291abaae82e33bc40f4c1a250a9cf5a",
+      "fingerprint": "sha256:1f376cdc0b3f41e2cd600f61b381c00d7d2e65a51e9f049df7821861c9f15f30",
+      "notBefore": "2026-07-21T08:29:30Z",
+      "notAfter": "2028-07-20T08:29:30Z",
+      "requester": {
+        "origin": "owncloud",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "privileged first-party issuance (owncloud/developer-certificates#23)",
+      "status": "active"
+    }
+  ]
 }
