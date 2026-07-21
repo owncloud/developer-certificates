@@ -1,0 +1,23 @@
+{
+  "appId": "admin_audit",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/admin_audit"
+  },
+  "claimedAt": "2026-07-21T08:27:04Z",
+  "certificates": [
+    {
+      "serial": "0xaa4adb0c2ee02249844fb33d4b2a3a20",
+      "fingerprint": "sha256:e6f54353d89a684bb5e678e710e85cf1327e3dcbdab357df4309bac0f9bb2065",
+      "notBefore": "2026-07-21T08:27:04Z",
+      "notAfter": "2028-07-20T08:27:04Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#26",
+      "status": "active"
+    }
+  ]
+}
