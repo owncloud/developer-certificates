@@ -1,0 +1,23 @@
+{
+  "appId": "kerberos",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/kerberos"
+  },
+  "claimedAt": "2026-07-21T08:26:39Z",
+  "certificates": [
+    {
+      "serial": "0xb7321421686ab01f9c05793a7ee0e242",
+      "fingerprint": "sha256:6f223724a17d3b31d86478d81a80f9b0f2ba611626ce3ad114eadca0b531a564",
+      "notBefore": "2026-07-21T08:26:39Z",
+      "notAfter": "2028-07-20T08:26:39Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#48",
+      "status": "active"
+    }
+  ]
+}
