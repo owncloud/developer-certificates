@@ -1,0 +1,23 @@
+{
+  "appId": "graphapi",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/graphapi"
+  },
+  "claimedAt": "2026-07-21T08:26:45Z",
+  "certificates": [
+    {
+      "serial": "0x49f5c052cc0c45f50ebcf71fd6a3cc05",
+      "fingerprint": "sha256:3afeb5feb85a5fe964c22604e1a65a1732837fb0b8ef9267319df42b37896f5a",
+      "notBefore": "2026-07-21T08:26:45Z",
+      "notAfter": "2028-07-20T08:26:45Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#46",
+      "status": "active"
+    }
+  ]
+}
