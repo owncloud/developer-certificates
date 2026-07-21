@@ -1,0 +1,23 @@
+{
+  "appId": "workflow",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/workflow"
+  },
+  "claimedAt": "2026-07-21T08:26:04Z",
+  "certificates": [
+    {
+      "serial": "0xc01bc0a76ced79b74cff7b43ac7cc3ff",
+      "fingerprint": "sha256:6d8c457f54b4fe7168e405f3fff033912b2d36cdae94b9ee97943acd18d19590",
+      "notBefore": "2026-07-21T08:26:04Z",
+      "notAfter": "2028-07-20T08:26:04Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#67",
+      "status": "active"
+    }
+  ]
+}
