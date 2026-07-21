@@ -1,0 +1,23 @@
+{
+  "appId": "windows_network_drive",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/windows_network_drive"
+  },
+  "claimedAt": "2026-07-21T08:26:14Z",
+  "certificates": [
+    {
+      "serial": "0xbccdf4ee3ddfa039fa8432f99b051f24",
+      "fingerprint": "sha256:e463f734b7bd4fe578d2ae654b317e30433f41d457bc3316b4131b40acb894a5",
+      "notBefore": "2026-07-21T08:26:14Z",
+      "notAfter": "2028-07-20T08:26:14Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#65",
+      "status": "active"
+    }
+  ]
+}
