@@ -1,0 +1,23 @@
+{
+  "appId": "wopi",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/wopi"
+  },
+  "claimedAt": "2026-07-21T08:26:09Z",
+  "certificates": [
+    {
+      "serial": "0x3144bcab7176de05a4623dbcabb3d84f",
+      "fingerprint": "sha256:9964a3ee1691185d59df750eeee6011a85415bdbd9679758692874d9a2b82b9f",
+      "notBefore": "2026-07-21T08:26:09Z",
+      "notAfter": "2028-07-20T08:26:09Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#66",
+      "status": "active"
+    }
+  ]
+}
