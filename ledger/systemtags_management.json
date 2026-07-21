@@ -1,0 +1,23 @@
+{
+  "appId": "systemtags_management",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/systemtags_management"
+  },
+  "claimedAt": "2026-07-21T08:26:29Z",
+  "certificates": [
+    {
+      "serial": "0x8f2fa11247edeb99198d49a5af0aa3fb",
+      "fingerprint": "sha256:1de412db67e9732ed185705917d4af39e743518e49a0558476bd1559ca9faa42",
+      "notBefore": "2026-07-21T08:26:29Z",
+      "notAfter": "2028-07-20T08:26:29Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#58",
+      "status": "active"
+    }
+  ]
+}
