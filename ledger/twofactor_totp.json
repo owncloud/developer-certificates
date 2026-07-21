@@ -1,0 +1,23 @@
+{
+  "appId": "twofactor_totp",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/twofactor_totp"
+  },
+  "claimedAt": "2026-07-21T10:28:12Z",
+  "certificates": [
+    {
+      "serial": "0x609d9d22e92b141ea33ff1ea9bd502a7",
+      "fingerprint": "sha256:c781910b8995307203974246c6cd2d6c0c4a7da3e90b174698896d2734dd608a",
+      "notBefore": "2026-07-21T10:28:12Z",
+      "notAfter": "2028-07-20T10:28:12Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#61",
+      "status": "active"
+    }
+  ]
+}
