@@ -1,0 +1,23 @@
+{
+  "appId": "files_ldap_home",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/files_ldap_home"
+  },
+  "claimedAt": "2026-07-21T08:26:59Z",
+  "certificates": [
+    {
+      "serial": "0x2d847d59a1eb0b9d12f4ef5d8f25c9af",
+      "fingerprint": "sha256:c4118242c040e2bb28f96bb8b09ce2aa2f8f322889754fb253e02870c8802ad6",
+      "notBefore": "2026-07-21T08:26:59Z",
+      "notAfter": "2028-07-20T08:26:59Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#38",
+      "status": "active"
+    }
+  ]
+}
