@@ -1,0 +1,23 @@
+{
+  "appId": "files_lifecycle",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/files_lifecycle"
+  },
+  "claimedAt": "2026-07-21T08:26:54Z",
+  "certificates": [
+    {
+      "serial": "0xa28b391eb0db2a777feac4a94447b54c",
+      "fingerprint": "sha256:cc8f16fd2bcff93f964e95bf1ea33fc415aefac063fa483ba8ce77fde045814f",
+      "notBefore": "2026-07-21T08:26:54Z",
+      "notAfter": "2028-07-20T08:26:54Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#39",
+      "status": "active"
+    }
+  ]
+}
