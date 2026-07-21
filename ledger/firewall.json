@@ -1,0 +1,23 @@
+{
+  "appId": "firewall",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/firewall"
+  },
+  "claimedAt": "2026-07-21T08:26:49Z",
+  "certificates": [
+    {
+      "serial": "0x92b85044ab3aaeaa025f9caff7558b5d",
+      "fingerprint": "sha256:5f79ffa75e47beaf36aa453810652c8ab850ba99330fa8f1a424cd0fff67a43d",
+      "notBefore": "2026-07-21T08:26:49Z",
+      "notAfter": "2028-07-20T08:26:49Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#44",
+      "status": "active"
+    }
+  ]
+}
