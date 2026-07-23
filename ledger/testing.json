@@ -1,0 +1,23 @@
+{
+  "appId": "testing",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/testing"
+  },
+  "claimedAt": "2026-07-23T09:39:07Z",
+  "certificates": [
+    {
+      "serial": "0x751507c1022e434b4785eed8a6a46c09",
+      "fingerprint": "sha256:cc60d428a90a545fa1b933d433f82ec5cdf815c6475ed939ce8596da9f5e526f",
+      "notBefore": "2026-07-23T09:39:07Z",
+      "notAfter": "2028-07-22T09:39:07Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#74",
+      "status": "active"
+    }
+  ]
+}
