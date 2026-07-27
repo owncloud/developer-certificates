@@ -1,0 +1,23 @@
+{
+  "appId": "migrate_to_ocis",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/migrate_to_ocis"
+  },
+  "claimedAt": "2026-07-27T09:55:05Z",
+  "certificates": [
+    {
+      "serial": "0x4222e8fa546c3b21ac29a4c83ba62379",
+      "fingerprint": "sha256:d45796a1c3267aa6f2ef7398a955c4c2255c652d87141f994ee07d20fb8cccc0",
+      "notBefore": "2026-07-27T09:55:05Z",
+      "notAfter": "2028-07-26T09:55:05Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#75",
+      "status": "active"
+    }
+  ]
+}
