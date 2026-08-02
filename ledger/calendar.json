@@ -1,0 +1,23 @@
+{
+  "appId": "calendar",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/calendar"
+  },
+  "claimedAt": "2026-08-02T15:16:08Z",
+  "certificates": [
+    {
+      "serial": "0x1860576bb531381c1eeff212fcf4c790",
+      "fingerprint": "sha256:e8ddc352c55050b1d564bec2197e140ed2f956f99585028743dc3b8869d2a58e",
+      "notBefore": "2026-08-02T15:16:08Z",
+      "notAfter": "2028-08-01T15:16:08Z",
+      "requester": {
+        "origin": "github",
+        "login": "DeepDiver1975",
+        "userId": 1005065
+      },
+      "issueRef": "#76",
+      "status": "active"
+    }
+  ]
+}
