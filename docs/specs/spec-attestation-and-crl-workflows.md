@@ -84,18 +84,41 @@ A **copy-paste reference** developers add to their app repo to sign releases in 
 (design §16, CI-signing tier). Not run by us — documentation output. It:
 
 1. Installs the `ocsign` Go binary (pinned version/checksum).
-2. Loads the developer's private key from a **repo/environment secret** (guidance:
+2. **Builds the app payload** into a staging directory — the tree that becomes the
+   release tarball and nothing else, e.g. `build/artifacts/appstore/<app>` (the
+   `make appstore` convention). No `.git`, no `tests/`, no `.github/`, no build
+   scratch.
+3. Loads the developer's private key from a **repo/environment secret** (guidance:
    protect the signing job with environment protection rules / required
    reviewers — the key is "warm").
-3. Runs `ocsign --path . --key <secret> --cert leaf.crt --chain intermediate.crt`
-   to produce Mode-1 `signature.json`.
-4. Optionally runs with `--attest --attest-repo <codesigning repo>` (or calls the
+4. Runs `ocsign --path build/artifacts/appstore/<app> --key <secret> --cert
+   leaf.crt --chain intermediate.crt` to produce Mode-1
+   `build/artifacts/appstore/<app>/appinfo/signature.json`.
+5. Optionally runs with `--attest --attest-repo <codesigning repo>` (or calls the
    attestation workflow via `repository_dispatch`) to obtain and embed a Mode-2
    token.
-5. Packages/publishes the signed app (developer's own distribution — not through
-   ownCloud).
+6. **Rolls the tarball from the signed staging directory** and publishes it
+   (developer's own distribution — not through ownCloud).
 
-The full YAML lives in the developer-documentation spec.
+**The signed tree and the shipped tree must be the same tree.** Package first,
+point `--path` at the staging directory, tar afterwards:
+
+- `--path .` in a CI job signs the `actions/checkout` tree. In app mode the
+  manifest hashes everything under `--path` bar `appinfo/signature.json` and OS
+  cruft (Go tool spec §3.2), so the app's signature would legitimize `.git`
+  internals, tests and CI config — and it verifies, because the manifest
+  genuinely describes the tree that was signed. `ocsign` therefore refuses a
+  `--path` holding a `.git` entry at any depth (owncloud/ocsign#21), and
+  `--allow-vcs` MUST NOT appear in a release pipeline — it exists only for
+  signing a development checkout in place to exercise verification locally.
+- A staging directory *inside* the checkout (`build/artifacts/…`) is fine: the
+  guard only looks for `.git` **under** `--path`. There is no need to stage
+  outside the workspace.
+- Apps whose Makefile stages, signs and tars in one `appstore` target already
+  have the right order — keep it, and swap the legacy `occ integrity:sign-app`
+  hook for `ocsign`. Never tar before signing.
+
+The full YAML lives in the developer-documentation spec (§4.1).
 
 ---
 
