@@ -1,0 +1,23 @@
+{
+  "appId": "asyntai",
+  "owner": {
+    "origin": "github",
+    "repo": "asyntai/owncloud-chatbot"
+  },
+  "claimedAt": "2026-09-15T10:45:22Z",
+  "certificates": [
+    {
+      "serial": "0x5b2867f5831b170020e121916760a08",
+      "fingerprint": "sha256:1bbc0328365bf95560533969f70bacc5b5966b6c2b6eda99e4d603a23e3354c7",
+      "notBefore": "2026-09-15T10:45:22Z",
+      "notAfter": "2028-09-14T10:45:22Z",
+      "requester": {
+        "origin": "github",
+        "login": "asyntai",
+        "userId": 235241561
+      },
+      "issueRef": "#82",
+      "status": "active"
+    }
+  ]
+}
