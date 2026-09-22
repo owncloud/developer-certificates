@@ -1,0 +1,23 @@
+{
+  "appId": "contacts",
+  "owner": {
+    "origin": "github",
+    "repo": "owncloud/contacts"
+  },
+  "claimedAt": "2026-09-22T20:40:38Z",
+  "certificates": [
+    {
+      "serial": "0xffb08accb60415d58ee18f8b2eebbcf0",
+      "fingerprint": "sha256:c5079148aeb5903a400f5c10e7420cba45969ce2dc90e0dd52efd1f0929f719b",
+      "notBefore": "2026-09-22T20:40:38Z",
+      "notAfter": "2028-09-21T20:40:38Z",
+      "requester": {
+        "origin": "github",
+        "login": "oc-tmueller",
+        "userId": 323649642
+      },
+      "issueRef": "#83",
+      "status": "active"
+    }
+  ]
+}
