@@ -1,0 +1,23 @@
+{
+  "appId": "oc_photoselector",
+  "owner": {
+    "origin": "github",
+    "repo": "gkellershs/oc_photoselector"
+  },
+  "claimedAt": "2026-10-23T08:47:01Z",
+  "certificates": [
+    {
+      "serial": "0x8f847cb7c2d40a5bd760295fd299b0fb",
+      "fingerprint": "sha256:4e24a40475f7ef525be3d4fa05f6e5475595767c94e8f87af7d9a5ec08ffec12",
+      "notBefore": "2026-10-23T08:47:01Z",
+      "notAfter": "2028-10-22T08:47:01Z",
+      "requester": {
+        "origin": "github",
+        "login": "gkellershs",
+        "userId": 124203296
+      },
+      "issueRef": "#87",
+      "status": "active"
+    }
+  ]
+}
