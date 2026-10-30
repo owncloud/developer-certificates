@@ -22,9 +22,10 @@ on:
   workflow_dispatch:
 
 # Allow one concurrent Pages deployment; a newer run cancels the in-progress one.
-# Each run publishes the CRL of the commit that triggered it, and the newer run's
-# commit carries the newer CRL, so cancelling the older deploy loses nothing. (A
-# manual re-run of an old run is the exception: it republishes that old CRL.)
+# A push run publishes the CRL files of the commit that triggered it, and a later
+# push to main carries newer ones, so cancelling the older deploy loses nothing.
+# A manual re-run of an old run is the exception: as the newest run it cancels any
+# newer deploy and republishes its old CRLs until the next push.
 # Not cancelling let a single deploy hung at the github-pages environment
 # gate hold this group for 30 days, while each crlgen push superseded the pending
 # run and the published CRL expired.
