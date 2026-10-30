@@ -21,10 +21,14 @@ on:
     paths: ["crl/**", "resources/codesigning/crl/**"]
   workflow_dispatch:
 
-# Allow one concurrent Pages deployment; do not cancel an in-progress deploy.
+# Allow one concurrent Pages deployment; a newer run cancels the in-progress one.
+# Every run publishes the then-current CRL, so cancelling an older deploy loses
+# nothing. Not cancelling let a single deploy hung at the github-pages environment
+# gate hold this group for 30 days, while each crlgen push superseded the pending
+# run and the published CRL expired.
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 # Minimal permissions (design §10): read to checkout, plus the Pages deploy grants.
 permissions:
