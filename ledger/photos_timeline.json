@@ -1,0 +1,23 @@
+{
+  "appId": "photos_timeline",
+  "owner": {
+    "origin": "github",
+    "repo": "rumcajz/yearroll"
+  },
+  "claimedAt": "2026-11-08T17:23:42Z",
+  "certificates": [
+    {
+      "serial": "0x315e2dedf936645e933e57c1ed6ba5ad",
+      "fingerprint": "sha256:b40289f0e3fbd35bf925327c5aa11e41d63126e95f89883de4e12db2a0d52183",
+      "notBefore": "2026-11-08T17:23:42Z",
+      "notAfter": "2028-11-07T17:23:42Z",
+      "requester": {
+        "origin": "github",
+        "login": "rumcajz",
+        "userId": 11768460
+      },
+      "issueRef": "#91",
+      "status": "active"
+    }
+  ]
+}
