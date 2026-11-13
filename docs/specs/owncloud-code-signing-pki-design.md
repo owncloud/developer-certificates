@@ -753,7 +753,8 @@ may physically delete the inert G1 files (cosmetic).
   - *Baseline (all):* never commit/bundle the key; restricted permissions;
     passphrase-encrypted at rest.
   - *CI signing (most):* key as an encrypted CI secret used by a release
-    workflow (reference GitHub Actions workflow provided). This is a "warm" key —
+    workflow (reference GitHub Actions workflow provided — developer-documentation
+    spec §4.1). This is a "warm" key —
     use environment protection rules / required reviewers on the signing job.
   - *High-assurance (partners, high-value apps):* hardware-backed keys — HSM,
     cloud KMS (AWS/GCP KMS), or hardware token. EC P-384 is well-supported.

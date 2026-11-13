@@ -20,7 +20,7 @@ External app developers. Sections:
 1. Overview — why apps must be signed, what you get, the two modes.
 2. Generate your key and CSR.
 3. Request a certificate (issue form + nonce challenge).
-4. Sign your app (the `ocsign` tool).
+4. Sign your app (the `ocsign` tool), including the reference CI workflow.
 5. (Optional) Get a Mode-2 attestation for longevity.
 6. Renew / re-sign.
 7. Revoke a certificate.
@@ -110,6 +110,114 @@ with a renewed cert.
 
 Ship `signature.json` inside your app. On install/update, ownCloud servers verify
 it.
+
+> **`--path` is the packaged app payload, not your repository checkout.** The
+> manifest hashes *everything* under `--path`, so signing a checkout makes
+> `.git`, `tests/` and `.github/` part of the signed app — and it verifies,
+> because the manifest genuinely describes what was signed. `ocsign` refuses a
+> `--path` that contains a `.git` entry at any depth and exits 1. `--allow-vcs`
+> overrides that for one purpose only: signing a development checkout in place to
+> try verification locally. It must never appear in a release pipeline.
+
+### 4.1 Signing in CI (reference GitHub Actions workflow)
+
+Copy this into your app repo as `.github/workflows/release.yml`. It packages the
+payload, signs the staging directory, and only then rolls the tarball — so the
+tree you ship is exactly the tree you signed.
+
+`make appstore` in the stock ownCloud app Makefile stages the payload into
+`build/artifacts/appstore/<app>`, signs that directory, and tars it, all in one
+target. That order is correct; keep it. To use it from CI, either split the
+staging part into its own target (`appstore-dir` below) and let the workflow sign
+and tar, or leave the target whole and replace its legacy
+`occ integrity:sign-app` hook with `ocsign`. Never tar before signing.
+
+A staging directory *inside* the checkout is fine — `ocsign` only looks for
+`.git` **under** `--path`, so `build/artifacts/appstore/<app>` passes. You do not
+need to stage outside the workspace.
+
+```yaml
+name: release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write          # to attach the signed tarball to the release
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    environment: release   # a CI key is "warm": require reviewers on this job
+    env:
+      APP_ID: example-app
+      OCSIGN_VERSION: v0.3.0
+      PAYLOAD: build/artifacts/appstore/example-app
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install ocsign (pinned, checksum-verified)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          archive="ocsign_${OCSIGN_VERSION}_linux_amd64.tar.gz"
+          gh release download "$OCSIGN_VERSION" --repo owncloud/ocsign \
+            --dir "$RUNNER_TEMP" --pattern "$archive" --pattern SHA256SUMS
+          cd "$RUNNER_TEMP"
+          sha256sum --ignore-missing --check SHA256SUMS
+          tar -xzf "$archive" ./ocsign
+          install -m 0755 ocsign /usr/local/bin/ocsign
+
+      - name: Build the app payload
+        # Stages the release tree into $PAYLOAD and stops there: no tarball, no
+        # signing. Everything the app ships and nothing else — no .git, no
+        # tests/, no .github/, no build scratch.
+        run: make appstore-dir
+
+      - name: Write the key material
+        env:
+          OCSIGN_KEY: ${{ secrets.OCSIGN_KEY }}
+          OCSIGN_LEAF: ${{ secrets.OCSIGN_LEAF }}
+          OCSIGN_CHAIN: ${{ secrets.OCSIGN_CHAIN }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s\n' "$OCSIGN_KEY"   > "$RUNNER_TEMP/signing.key"
+          printf '%s\n' "$OCSIGN_LEAF"  > "$RUNNER_TEMP/leaf.crt"
+          printf '%s\n' "$OCSIGN_CHAIN" > "$RUNNER_TEMP/intermediate.crt"
+
+      - name: Sign the payload
+        run: |
+          ocsign --path "$PAYLOAD" \
+                 --key   "$RUNNER_TEMP/signing.key" \
+                 --cert  "$RUNNER_TEMP/leaf.crt" \
+                 --chain "$RUNNER_TEMP/intermediate.crt"
+
+      # Mode-2 attestation is not yet available (attestation/CRL spec ITEM #2).
+      # Once it is, add --attest --attest-repo owncloud/developer-certificates to
+      # the command above; nothing else in this workflow changes.
+
+      - name: Roll the tarball from the signed payload
+        run: tar --format=gnu -czf "$APP_ID.tar.gz" -C "$(dirname "$PAYLOAD")" "$APP_ID"
+
+      - name: Attach it to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "$APP_ID.tar.gz"
+```
+
+Notes to state alongside the YAML:
+
+- `OCSIGN_VERSION` pins the `ocsign` release; integrity comes from that release's
+  `SHA256SUMS`. For higher assurance, hardcode the archive's SHA-256 instead of
+  fetching the sums file from the same release.
+- `actions/checkout` is pinned to a full commit SHA, and the release upload uses
+  the pre-installed `gh` rather than a third-party action — so there is exactly
+  one action SHA to keep current.
+- Store the leaf and intermediate as secrets too, so the workflow needs nothing
+  committed to the repo.
 
 ---
 
@@ -256,9 +364,10 @@ body:
 - **Baseline:** never commit or bundle your private key; restrict file
   permissions; keep it passphrase-encrypted at rest.
 - **CI signing (recommended for most):** store the key as an encrypted CI secret
-  and sign in your release workflow (reference workflow provided — attestation/CRL
-  spec §2). Protect the signing job (environment protection rules / required
-  reviewers) — a CI secret is a "warm" key.
+  and sign in your release workflow (reference workflow in §4.1; its place in the
+  overall design is attestation/CRL spec §2). Protect the signing job
+  (environment protection rules / required reviewers) — a CI secret is a "warm"
+  key.
 - **High assurance:** hardware-backed keys (HSM, cloud KMS, hardware token).
   EC P-384 is widely supported.
 - Consider **separate keys** for CI vs. manual release (you can hold multiple
