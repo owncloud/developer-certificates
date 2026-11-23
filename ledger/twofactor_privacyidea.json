@@ -1,0 +1,23 @@
+{
+  "appId": "twofactor_privacyidea",
+  "owner": {
+    "origin": "github",
+    "repo": "privacyidea/privacyidea-owncloud-app"
+  },
+  "claimedAt": "2026-11-23T13:45:17Z",
+  "certificates": [
+    {
+      "serial": "0x1080bc36700fe113032df9d1d3e835d4",
+      "fingerprint": "sha256:9d68ebdc0ef53437c97faed8b888a9420d832e0300797d5328855041440ee770",
+      "notBefore": "2026-11-23T13:45:17Z",
+      "notAfter": "2028-11-22T13:45:17Z",
+      "requester": {
+        "origin": "github",
+        "login": "nilsbehlen",
+        "userId": 29949516
+      },
+      "issueRef": "#92",
+      "status": "active"
+    }
+  ]
+}
